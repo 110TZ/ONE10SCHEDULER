@@ -1052,7 +1052,7 @@ async function confirmSend() {
   closeModal('sendModal');
   act.call_date=isoDate(new Date());
   await dbUpdateActivity(act);
-  const formURL=emailjsCfg.formURL||'https://forms.gle/eqmv5b8zTqaagcTf8';
+  const formURL=emailjsCfg.formURL||'https://forms.office.com/r/gn5jLqhzrw';
   const link=`${formURL}?rowid=${projId}-${actId}&project=${encodeURIComponent(proj.name)}`;
   const forFmt=fmtDate(act.for_date);
   const body=`Dear ${v.name},
