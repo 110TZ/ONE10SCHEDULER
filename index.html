@@ -1053,9 +1053,9 @@ async function confirmSend() {
   act.call_date=isoDate(new Date());
   await dbUpdateActivity(act);
   const formURL=emailjsCfg.formURL||'https://forms.office.com/r/gn5jLqhzrw';
-  // Use pre-filled URL so job reference auto-fills for trade
+  // Use pre-filled URL — use act.num (activity number) not actId (database ID)
   const prefillBase = 'https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAO__px0eEJUODlNR01DUlNCSzNLUjhBM0Y1NDZQSzFGMi4u&r2ded8210fc634fbe8acb0cbf7399c67e=';
-  const jobRef = `${projId}-${actId}`;
+  const jobRef = `${projId}-${act.num}`;
   const link = prefillBase + encodeURIComponent(jobRef);
   const forFmt=fmtDate(act.for_date);
   const body=`Dear ${v.name},
