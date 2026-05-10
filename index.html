@@ -380,7 +380,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white)
         <div class="settings-row"><div><div class="settings-row-label">Public Key</div></div><input class="settings-input" id="setEJKey" placeholder="e.g. aBcDeFgHiJkL"></div>
         <div class="settings-row"><div><div class="settings-row-label">Service ID</div></div><input class="settings-input" id="setEJService" placeholder="e.g. service_xxxxxxx"></div>
         <div class="settings-row"><div><div class="settings-row-label">Template ID</div></div><input class="settings-input" id="setEJTemplate" placeholder="e.g. template_xxxxxxx"></div>
-        <div class="settings-row"><div><div class="settings-row-label">Response Form URL</div></div><input class="settings-input" id="setFormURL" placeholder="https://forms.office.com/r/..."></div>
+        <div class="settings-row"><div><div class="settings-row-label">Response Form URL</div></div><input class="settings-input" id="setFormURL" placeholder="https://forms.gle/..."></div>
       </div>
       <button class="save-settings-btn" onclick="saveSettings()">Save Settings</button>
     </div>
@@ -1052,7 +1052,7 @@ async function confirmSend() {
   closeModal('sendModal');
   act.call_date=isoDate(new Date());
   await dbUpdateActivity(act);
-  const formURL=emailjsCfg.formURL||'https://forms.office.com/r/YOUR_FORM_ID';
+  const formURL=emailjsCfg.formURL||'https://forms.gle/eqmv5b8zTqaagcTf8';
   const link=`${formURL}?rowid=${projId}-${actId}&project=${encodeURIComponent(proj.name)}`;
   const forFmt=fmtDate(act.for_date);
   const body=`Dear ${v.name},
