@@ -1052,11 +1052,9 @@ async function confirmSend() {
   closeModal('sendModal');
   act.call_date=isoDate(new Date());
   await dbUpdateActivity(act);
-  const formURL=emailjsCfg.formURL||'https://forms.office.com/r/gn5jLqhzrw';
-  // Use pre-filled URL — use act.num (activity number) not actId (database ID)
-  const prefillBase = 'https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAO__px0eEJUODlNR01DUlNCSzNLUjhBM0Y1NDZQSzFGMi4u&r2ded8210fc634fbe8acb0cbf7399c67e=';
-  const jobRef = `${projId}-${act.num}`;
-  const link = prefillBase + encodeURIComponent(jobRef);
+  // Build link to custom response page — automatically updates Supabase
+  const baseURL = window.location.href.replace('index.html','').replace(/\/[^/]*$/, '/');
+  const link = `${baseURL}respond.html?proj=${projId}&act=${act.num}`;
   const forFmt=fmtDate(act.for_date);
   const body=`Dear ${v.name},
 
