@@ -1053,8 +1053,8 @@ async function confirmSend() {
   act.call_date=isoDate(new Date());
   await dbUpdateActivity(act);
   // Build link to custom response page — automatically updates Supabase
-  const baseURL = window.location.href.replace('index.html','').replace(/\/[^/]*$/, '/');
-  const link = `${baseURL}respond.html?proj=${projId}&act=${act.num}`;
+  // Always use GitHub Pages URL — never local file path
+  const link = `https://110tz.github.io/ONE10SCHEDULER/respond.html?proj=${projId}&act=${act.num}`;
   const forFmt=fmtDate(act.for_date);
   const body=`Dear ${v.name},
 
