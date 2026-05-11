@@ -921,20 +921,57 @@ async function confirmSendSilent() {
   if(!v?.email||!act?.for_date) return;
   const link=`https://110tz.github.io/ONE10SCHEDULER/respond.html?proj=${projId}&act=${act.num}`;
   const forFmt=fmtDate(act.for_date);
-  if(emailjsCfg.key&&emailjsCfg.serviceId&&emailjsCfg.templateId){
-    try{await emailjs.send(emailjsCfg.serviceId,emailjsCfg.templateId,{to_email:v.email,to_name:v.name,from_name:'Taha Zaidi — ONE10 Constructions',subject:`Updated Schedule — ${act.name} | ${proj?.address}`,message:`Dear ${v.name},
+  const body=`Dear ${v.name},
 
-Your scheduled date for ${act.name} at ${proj?.address} has been updated.
+I am writing on behalf of ONE10 Constructions to advise that your previously scheduled date for the following works has been updated. Please review the new date and reconfirm your availability at your earliest convenience.
 
-New For Date: ${forFmt}
+---
+Project Address:  ${proj?.address}
+Activity:         ${act.name}
+Stage:            ${act.stage}
+Updated For Date: ${forFmt}
+---
 
-Please confirm: ${link}
+Please click the link below to confirm, decline, or propose an alternative date:
+
+${link}
+
+YOUR RESPONSE OPTIONS:
+  CONFIRMED - I confirm the updated date
+  DECLINED  - I am unable to attend (reason MANDATORY)
+  ALT DATE  - I propose a different date (date MANDATORY)
+
+We apologise for any inconvenience caused by the schedule change. Should you have any questions please do not hesitate to contact me.
 
 Kind regards,
 Taha Zaidi
+Project Manager
 ONE10 CONSTRUCTIONS
-0405 080 275`,reply_to:'Info@one10constructions.com.au',response_link:link,activity:act.name,address:proj?.address||'',stage:act.stage,for_date:forFmt});}
-    catch(e){console.error('Silent email failed:',e);}
+P: 0405 080 275
+E: Info@one10constructions.com.au
+
+---
+This is an automated scheduling update from ONE10 Constructions.
+If received in error please contact Taha Zaidi on 0405 080 275.`;
+  if(emailjsCfg.key&&emailjsCfg.serviceId&&emailjsCfg.templateId){
+    try{
+      await emailjs.send(emailjsCfg.serviceId,emailjsCfg.templateId,{
+        to_email:v.email, to_name:v.name,
+        from_name:'Taha Zaidi — ONE10 Constructions',
+        subject:`Scheduling Update — ${act.name} | ${proj?.address}`,
+        message:body,
+        reply_to:'Info@one10constructions.com.au',
+        response_link:link,
+        activity:act.name,
+        address:proj?.address||'',
+        stage:act.stage,
+        for_date:forFmt
+      });
+    } catch(e){ console.error('Silent email failed:',e); }
+  } else {
+    const sub=encodeURIComponent(`Scheduling Update — ${act.name} | ${proj?.address}`);
+    const b=encodeURIComponent(body);
+    window.open(`mailto:${v.email}?subject=${sub}&body=${b}`);
   }
 }
 
