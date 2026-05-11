@@ -260,9 +260,88 @@ body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white)
 @media(max-width:768px){
   .stat-grid{grid-template-columns:repeat(2,1fr)}
   .proj-grid,.vendor-grid{grid-template-columns:1fr}
-  .main{padding:14px}
-  .topnav{padding:0 14px}
+  .main{padding:12px}
+  .topnav{padding:0 12px;height:52px}
+  .nav-links{gap:1px}
+  .nav-link{padding:6px 10px;font-size:10px}
   .week-col{min-width:130px}
+
+  /* ── MOBILE BOTTOM NAV ── */
+  .topnav .nav-links{display:none}
+  .mobile-bottom-nav{display:flex !important}
+
+  /* ── MOBILE SCHEDULE TABLE → CARDS ── */
+  .schedule-wrap{border:none;border-radius:0;overflow:visible}
+  .schedule-table{display:block;min-width:unset}
+  .schedule-table thead{display:none}
+  .schedule-table tbody{display:flex;flex-direction:column;gap:8px}
+  .stage-hdr{display:block}
+  .stage-hdr td{display:block;border-radius:8px;padding:8px 12px}
+  .act-row{display:block;background:var(--black2);border:1px solid var(--grey1);border-radius:10px;padding:12px;position:relative}
+  .act-row td{display:none}
+  .act-row.alt{background:var(--black2)}
+  .act-row .mobile-card{display:flex !important;flex-direction:column;gap:10px}
+}
+
+@media(min-width:769px){
+  .mobile-bottom-nav{display:none !important}
+  .mobile-card{display:none !important}
+  .act-row td{display:table-cell}
+}
+
+/* ── MOBILE BOTTOM NAV STYLES ── */
+.mobile-bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--black2);
+  border-top:1px solid var(--grey1);
+  padding:8px 0 20px;
+  z-index:150;
+  justify-content:space-around;
+}
+.mob-nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  cursor:pointer;padding:4px 12px;border-radius:6px;
+  transition:all .15s;
+  background:none;border:none;font-family:'DM Sans',sans-serif;
+}
+.mob-nav-item.active .mob-nav-icon{color:var(--white)}
+.mob-nav-item.active .mob-nav-label{color:var(--white);font-weight:600}
+.mob-nav-icon{font-size:20px;color:var(--grey3);transition:color .15s}
+.mob-nav-label{font-size:9px;color:var(--grey3);letter-spacing:.5px;text-transform:uppercase;transition:color .15s}
+
+/* ── MOBILE CARD INNER STYLES ── */
+.mc-header{display:flex;align-items:flex-start;gap:8px}
+.mc-checkbox{margin-top:3px;width:15px;height:15px;cursor:pointer;accent-color:var(--white);flex-shrink:0}
+.mc-title-wrap{flex:1;min-width:0}
+.mc-num{font-size:10px;color:var(--grey3);font-family:'DM Mono',monospace;margin-right:4px}
+.mc-badges{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:3px}
+.mc-name{font-size:13px;font-weight:600;color:var(--white);line-height:1.3}
+.mc-vendor{font-size:11px;color:var(--grey4);margin-top:2px}
+.mc-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.mc-icon-btn{background:transparent;border:none;cursor:pointer;padding:2px;font-size:15px;line-height:1;display:block}
+.mc-comment-preview{margin-top:5px;padding:5px 8px;border-left:2px solid var(--grey1);font-size:10px;color:var(--grey4);font-style:italic;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mc-dates{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mc-date-box{background:var(--black3);border-radius:6px;padding:7px 10px}
+.mc-date-label{font-size:9px;font-weight:700;letter-spacing:.5px;margin-bottom:2px;text-transform:uppercase}
+.mc-date-val{font-size:11px;font-family:'DM Mono',monospace}
+.mc-footer{display:flex;gap:6px;align-items:center}
+.mc-status-sel{flex:1;padding:7px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer}
+.mc-send-btn{padding:7px 14px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;white-space:nowrap;background:var(--white);color:var(--black)}
+.mc-send-btn:disabled{background:var(--grey2);color:var(--grey4);cursor:not-allowed}
+@media(min-width:769px){.mobile-only{display:none !important}}
+@media(max-width:768px){
+  .act-row td:not(.mobile-only){display:none !important}
+  .mobile-only{display:table-cell !important}
+  .act-row td.mobile-only:first-child{display:none !important}
+  .act-row td.mobile-only:last-child{display:table-cell !important;padding:0 0 8px 0}
+}
+
+@media(max-width:768px){
+  .main{padding-bottom:80px}
+  .filter-bar{flex-wrap:wrap}
+  .search-input{width:100%}
+  .proj-header-row{flex-direction:column;gap:8px}
 }
 
 /* ── FLAGS ── */
@@ -448,6 +527,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white)
     </div>
   </div>
 </div>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+  <button class="mob-nav-item active" id="mbn-dashboard" onclick="showPage('dashboard');updateMobileNav('dashboard')">
+    <span class="mob-nav-icon">&#9783;</span>
+    <span class="mob-nav-label">Dash</span>
+  </button>
+  <button class="mob-nav-item" id="mbn-projects" onclick="showPage('projects');updateMobileNav('projects')">
+    <span class="mob-nav-icon">&#9632;</span>
+    <span class="mob-nav-label">Projects</span>
+  </button>
+  <button class="mob-nav-item" id="mbn-schedule" onclick="showPage('schedule');updateMobileNav('schedule')">
+    <span class="mob-nav-icon">&#128197;</span>
+    <span class="mob-nav-label">Schedule</span>
+  </button>
+  <button class="mob-nav-item" id="mbn-vendors" onclick="showPage('vendors');updateMobileNav('vendors')">
+    <span class="mob-nav-icon">&#128101;</span>
+    <span class="mob-nav-label">Vendors</span>
+  </button>
+  <button class="mob-nav-item" id="mbn-settings" onclick="showPage('settings');updateMobileNav('settings')">
+    <span class="mob-nav-icon">&#9881;</span>
+    <span class="mob-nav-label">More</span>
+  </button>
+</nav>
 
 <!-- CALENDAR -->
 <div class="cal-overlay" id="calOverlay" onclick="closeCal()"></div>
@@ -1339,7 +1442,46 @@ function renderDetail(projId, search='', stageF='all', selIds=[]) {
     if (isDueThisWeek) rowStyle = 'outline:1px solid rgba(59,130,246,.3);';
     if (isOverdue) rowStyle = 'outline:1px solid rgba(239,68,68,.3);';
 
+    // Build mobile card HTML
+    const mcStatusCls = ({Pending:'st-pending',Confirmed:'st-confirmed',Declined:'st-declined','Alt Date Proposed':'st-alt',Completed:'st-completed'})[act.status]||'st-pending';
+    const mcBorderCol = ({Pending:'var(--grey2)',Confirmed:'#22c55e',Declined:'#ef4444','Alt Date Proposed':'#3b82f6',Completed:'#a855f7'})[act.status]||'var(--grey2)';
+    const mcDateBox = (label, val, col) => `<div class="mc-date-box"><div class="mc-date-label" style="color:${col}">${label}</div><div class="mc-date-val" style="color:${val?col:'var(--grey3)'}">${val?fmtDate(val):'— / — / —'}</div></div>`;
+    const mobileCard = `<div class="mobile-card" style="border-left:3px solid ${mcBorderCol}${isOverdue?';background:rgba(239,68,68,.04)':''}">
+      <div class="mc-header">
+        <input type="checkbox" class="mc-checkbox" ${isSelected?'checked':''} onchange="toggleSelect('${projId}',${act.id},this.checked)">
+        <div class="mc-title-wrap">
+          <div class="mc-badges">
+            <span class="mc-num">${act.num}</span>
+            ${isFlagged?'<span style="color:var(--yellow);font-size:11px">&#9873;</span>':''}
+            ${isDueThisWeek?'<span style="color:#3b82f6;font-size:9px;font-weight:700;background:rgba(59,130,246,.12);padding:1px 6px;border-radius:10px">THIS WEEK</span>':''}
+            ${isOverdue?'<span style="color:var(--red);font-size:9px;font-weight:700;background:rgba(239,68,68,.12);padding:1px 6px;border-radius:10px">OVERDUE</span>':''}
+          </div>
+          <div class="mc-name">${act.name}</div>
+          <div class="mc-vendor">${vendors.find(v=>v.id===act.vendor_id)?.name||'— No vendor —'}</div>
+          ${commentVisible?`<div class="mc-comment-preview"><span>&#128172; ${latestComment.text}</span><span style="color:var(--grey3);text-decoration:underline;cursor:pointer;font-size:9px;font-style:normal;flex-shrink:0" onclick="hideComment('${projId}',${act.id})">hide</span></div>`:''}
+        </div>
+        <div class="mc-actions">
+          <button class="mc-icon-btn" onclick="toggleFlag('${projId}',${act.id})" style="color:${isFlagged?'var(--yellow)':'var(--grey3)'}">&#9873;</button>
+          <button class="mc-icon-btn" onclick="openComments('${projId}',${act.id})" style="color:${comments.length>0?'var(--blue)':'var(--grey3)'}">&#128172;${comments.length>0?`<sup style='font-size:8px'>${comments.length}</sup>`:''}</button>
+          <button class="mc-icon-btn" onclick="deleteActivity('${projId}',${act.id})" style="color:var(--grey3)">&#10005;</button>
+        </div>
+      </div>
+      <div class="mc-dates">
+        ${mcDateBox('CALL', act.call_date, '#f59e0b')}
+        ${mcDateBox('FOR', act.for_date, '#3b82f6')}
+        ${mcDateBox('START', act.actual_start, '#22c55e')}
+        ${mcDateBox('DONE', act.complete_date, '#a855f7')}
+      </div>
+      <div class="mc-footer">
+        <select class="mc-status-sel status-select ${mcStatusCls}" onchange="overrideStatus('${projId}',${act.id},this.value);updateSelectColour(this)">${statusOpts}</select>
+        <button class="mc-send-btn" ${canSend&&!isDone?'':'disabled'} onclick="initSend('${projId}',${act.id})">${act.status==='Pending'?'SEND':'RESEND'}</button>
+        <button class="mc-icon-btn" onclick="openInsertAct('${projId}',${act.id})" title="Insert below" style="color:var(--grey3);background:var(--black3);border:1px solid var(--grey1);border-radius:4px;padding:4px 8px;font-size:11px">+</button>
+      </div>
+    </div>`;
+
     rows += `<tr class="act-row ${alt?'alt':''} ${isDone?'completed':''} ${isFlagged?'flagged':''}" id="ar-${projId}-${act.id}" style="${rowStyle}">
+      <td style="display:none" class="mobile-only"></td>
+      <td colspan="11" class="mobile-only" style="padding:0">${mobileCard}</td>
       <td><input type="checkbox" class="act-checkbox" ${isSelected?'checked':''} onchange="toggleSelect('${projId}',${act.id},this.checked)"></td>
       <td class="act-num" style="position:relative">
         ${act.num}
