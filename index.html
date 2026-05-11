@@ -255,6 +255,59 @@ body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white)
   .topnav{padding:0 14px}
   .week-col{min-width:130px}
 }
+
+/* ── FLAGS ── */
+.act-row.flagged td { background: rgba(234,179,8,.07) !important; }
+.act-row.flagged .flag-btn { color: var(--yellow) !important; }
+.flag-btn { background:transparent;border:none;color:var(--grey3);cursor:pointer;padding:4px 6px;border-radius:4px;font-size:13px;transition:all .15s; }
+.flag-btn:hover { color:var(--yellow); }
+
+/* ── COMMENT ── */
+.comment-btn { background:transparent;border:none;color:var(--grey3);cursor:pointer;padding:4px 6px;border-radius:4px;font-size:13px;transition:all .15s;position:relative; }
+.comment-btn:hover { color:var(--blue); }
+.comment-btn.has-comment { color:var(--blue); }
+.comment-preview { font-size:10px;color:var(--grey4);font-style:italic;padding:3px 10px 5px;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid var(--grey1);margin-left:10px; }
+.comment-preview .hide-link { color:var(--grey3);cursor:pointer;margin-left:6px;font-style:normal;text-decoration:underline;font-size:9px; }
+
+/* ── INSERT ACTIVITY BTN ── */
+.insert-act-btn { background:transparent;border:none;color:var(--grey3);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:11px;transition:all .15s;opacity:0; }
+.act-row:hover .insert-act-btn { opacity:1; }
+.insert-act-btn:hover { color:var(--white);background:var(--grey1); }
+
+/* ── CONFIRM OVERRIDE ── */
+.override-btn { background:transparent;border:1px solid var(--grey2);color:var(--grey4);cursor:pointer;padding:3px 8px;border-radius:4px;font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap; }
+.override-btn:hover { border-color:var(--green);color:var(--green); }
+
+/* ── BULK TOOLBAR ── */
+.bulk-toolbar { display:none;background:var(--black3);border:1px solid var(--grey2);border-radius:var(--radius);padding:10px 16px;margin-bottom:14px;align-items:center;gap:12px;flex-wrap:wrap; }
+.bulk-toolbar.visible { display:flex; }
+.bulk-count { font-size:12px;font-weight:600;color:var(--white); }
+.bulk-btn { background:var(--grey1);border:none;color:var(--grey5);padding:7px 14px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s; }
+.bulk-btn:hover { background:var(--grey2);color:var(--white); }
+.bulk-btn.danger { border:1px solid rgba(239,68,68,.3);color:var(--red); }
+.bulk-btn.danger:hover { background:rgba(239,68,68,.1); }
+.bulk-btn.primary { background:var(--white);color:var(--black); }
+.bulk-btn.primary:hover { background:var(--off); }
+.act-checkbox { width:15px;height:15px;cursor:pointer;accent-color:var(--white); }
+
+/* ── 3 DOTS MENU ── */
+.dots-menu { position:relative;display:inline-block; }
+.dots-btn { background:transparent;border:none;color:var(--grey4);cursor:pointer;padding:6px 10px;border-radius:4px;font-size:18px;line-height:1;transition:all .15s; }
+.dots-btn:hover { color:var(--white);background:var(--grey1); }
+.dots-dropdown { position:absolute;right:0;top:100%;background:var(--black2);border:1px solid var(--grey2);border-radius:var(--radius);min-width:180px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.6);display:none; }
+.dots-dropdown.open { display:block;animation:fadeIn .15s ease; }
+.dots-item { display:block;width:100%;background:none;border:none;color:var(--grey5);padding:10px 14px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;transition:all .15s; }
+.dots-item:hover { background:var(--grey1);color:var(--white); }
+.dots-item.danger { color:var(--red); }
+.dots-item.danger:hover { background:rgba(239,68,68,.1); }
+.dots-divider { height:1px;background:var(--grey1);margin:4px 0; }
+
+/* ── COMMENT MODAL ── */
+.comment-history { max-height:220px;overflow-y:auto;margin-bottom:14px; }
+.comment-entry { background:var(--black3);border-radius:6px;padding:10px 12px;margin-bottom:8px; }
+.comment-entry-text { font-size:13px;color:var(--white);margin-bottom:4px;line-height:1.5; }
+.comment-entry-meta { font-size:10px;color:var(--grey4); }
+.comment-entry.latest { border:1px solid var(--grey2); }
 </style>
 </head>
 <body>
@@ -404,6 +457,103 @@ body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white)
 </div>
 
 <!-- MODALS -->
+
+<!-- COMMENT MODAL -->
+<div class="modal-overlay" id="commentModal">
+  <div class="modal" style="width:500px">
+    <div class="modal-title">ACTIVITY COMMENTS</div>
+    <div style="font-size:12px;color:var(--grey4);margin-bottom:14px" id="commentActName"></div>
+    <div class="comment-history" id="commentHistory"></div>
+    <label class="modal-label">Add New Comment</label>
+    <textarea class="modal-input" id="commentText" rows="3" style="resize:none;min-height:80px" placeholder="Type your comment..."></textarea>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('commentModal')">Close</button>
+      <button class="modal-save" onclick="saveComment()">Save Comment</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK RESCHEDULE MODAL -->
+<div class="modal-overlay" id="bulkReschedModal">
+  <div class="modal" style="width:420px">
+    <div class="modal-title">BULK RESCHEDULE</div>
+    <div style="font-size:13px;color:var(--grey5);margin-bottom:16px" id="bulkReschedDesc"></div>
+    <label class="modal-label">Shift all For Dates by</label>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <input class="modal-input" id="bulkDaysShift" type="number" value="7" min="1" max="365" style="width:80px">
+      <span style="font-size:13px;color:var(--grey5)">days</span>
+      <select class="modal-select" id="bulkShiftDir" style="width:140px">
+        <option value="forward">Forward ▶</option>
+        <option value="back">Back ◀</option>
+      </select>
+    </div>
+    <div style="background:var(--black3);border-radius:6px;padding:12px 14px;font-size:12px;color:var(--grey4);margin-bottom:4px">
+      ⚡ This will also send updated scheduling emails to all selected trades that have an email address assigned.
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('bulkReschedModal')">Cancel</button>
+      <button class="modal-save" onclick="confirmBulkReschedule()">Reschedule & Send Emails</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK CALL OFF MODAL -->
+<div class="modal-overlay" id="bulkCallOffModal">
+  <div class="modal" style="width:420px">
+    <div class="modal-title">BULK CALL OFF</div>
+    <div style="font-size:13px;color:var(--grey5);margin-bottom:16px" id="bulkCallOffDesc"></div>
+    <div style="background:var(--black3);border-radius:6px;padding:12px 14px;font-size:12px;color:var(--grey4);margin-bottom:14px">
+      📧 A reschedule email will be sent to all selected trades asking them to stand by for a new date.
+    </div>
+    <label class="modal-label">Optional message to trades</label>
+    <textarea class="modal-input" id="callOffMessage" rows="2" style="resize:none" placeholder="e.g. Works have been postponed due to weather. We will be in touch shortly with a new date."></textarea>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('bulkCallOffModal')">Cancel</button>
+      <button class="modal-save" style="background:var(--red)" onclick="confirmBulkCallOff()">Call Off & Notify Trades</button>
+    </div>
+  </div>
+</div>
+
+<!-- INSERT ACTIVITY MODAL -->
+<div class="modal-overlay" id="insertActModal">
+  <div class="modal">
+    <div class="modal-title">INSERT ACTIVITY</div>
+    <div style="font-size:12px;color:var(--grey4);margin-bottom:14px" id="insertActDesc"></div>
+    <label class="modal-label">Activity Name *</label>
+    <input class="modal-input" id="insertActName" placeholder="e.g. Waterproofing Check">
+    <label class="modal-label">Stage</label>
+    <select class="modal-select" id="insertActStage">
+      <option value="BASE STAGE">Base Stage</option>
+      <option value="FRAME">Frame</option>
+      <option value="LOCK UP">Lock Up</option>
+      <option value="FIX">Fix</option>
+      <option value="FINAL / COMPLETION">Final / Completion</option>
+    </select>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('insertActModal')">Cancel</button>
+      <button class="modal-save" onclick="confirmInsertActivity()">Insert Activity</button>
+    </div>
+  </div>
+</div>
+
+<!-- DUPLICATE PROJECT MODAL -->
+<div class="modal-overlay" id="dupProjModal">
+  <div class="modal">
+    <div class="modal-title">DUPLICATE PROJECT</div>
+    <div style="font-size:12px;color:var(--grey4);margin-bottom:14px">Copies all activities and assigned vendors. No dates are copied.</div>
+    <label class="modal-label">New Project Name *</label>
+    <input class="modal-input" id="dupProjName" placeholder="e.g. Smith Residence">
+    <label class="modal-label">Address *</label>
+    <input class="modal-input" id="dupProjAddress" placeholder="e.g. 12 Example St, Suburb VIC">
+    <label class="modal-label">Lot Number</label>
+    <input class="modal-input" id="dupProjLot" placeholder="e.g. Lot 123">
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal('dupProjModal')">Cancel</button>
+      <button class="modal-save" onclick="confirmDuplicateProject()">Duplicate Project</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="vendorModal">
   <div class="modal">
     <div class="modal-title" id="vModalTitle">ADD VENDOR</div>
@@ -500,6 +650,280 @@ function addDays(d,n) { const r=new Date(d); r.setDate(r.getDate()+n); return r;
 function isoDate(d) {
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+// ── DOTS MENU ─────────────────────────────────────────────────────────────────
+function toggleDotsMenu(id) {
+  document.querySelectorAll('.dots-dropdown').forEach(d => { if(d.id!==id) d.classList.remove('open'); });
+  document.getElementById(id)?.classList.toggle('open');
+}
+function closeAllMenus() { document.querySelectorAll('.dots-dropdown').forEach(d=>d.classList.remove('open')); }
+document.addEventListener('click', e => { if (!e.target.closest('.dots-menu')) closeAllMenus(); });
+
+// ── DELETE PROJECT ────────────────────────────────────────────────────────────
+async function deleteProject(projId) {
+  const proj = projects.find(p=>p.id===projId);
+  if (!confirm(`Delete "${proj?.name}"? All activities will be permanently deleted.`)) return;
+  await sb.from('activities').delete().eq('project_id', projId);
+  await sb.from('projects').delete().eq('id', projId);
+  projects = projects.filter(p=>p.id!==projId);
+  renderDashboard(); showToast('Project deleted.','info');
+}
+
+// ── DUPLICATE PROJECT ─────────────────────────────────────────────────────────
+let dupSourceProjId=null;
+function openDupProj(projId) {
+  dupSourceProjId=projId;
+  const proj=projects.find(p=>p.id===projId);
+  document.getElementById('dupProjName').value=proj.name+' (Copy)';
+  document.getElementById('dupProjAddress').value=proj.address;
+  document.getElementById('dupProjLot').value=proj.lot||'';
+  openModal('dupProjModal');
+}
+async function confirmDuplicateProject() {
+  const name=document.getElementById('dupProjName').value.trim();
+  const addr=document.getElementById('dupProjAddress').value.trim();
+  if(!name||!addr){showToast('Name and address required.','error');return;}
+  const srcProj=projects.find(p=>p.id===dupSourceProjId);
+  const newId='proj_'+Date.now();
+  await sb.from('projects').insert({id:newId,name,address:addr,lot:document.getElementById('dupProjLot').value.trim()});
+  const newActs=(srcProj.activities||[]).map(a=>({
+    project_id:newId,num:a.num,name:a.name,stage:a.stage,
+    vendor_id:a.vendor_id||'',call_date:null,for_date:null,
+    actual_start:null,complete_date:null,status:'Pending',
+    notes:'',flagged:false,comments:[],comment_visible:true
+  }));
+  for(let i=0;i<newActs.length;i+=50) await sb.from('activities').insert(newActs.slice(i,i+50));
+  await dbFetch();
+  closeModal('dupProjModal');
+  renderDashboard();
+  showToast(`"${name}" created with ${newActs.length} activities.`,'success');
+}
+
+// ── FLAG ──────────────────────────────────────────────────────────────────────
+async function toggleFlag(projId,actId) {
+  const act=getAct(projId,actId); if(!act) return;
+  act.flagged=!act.flagged;
+  await dbUpdateActivity(act);
+  renderDetail(projId,'','all',currentSelection);
+  renderDashboard();
+  showToast(act.flagged?'Activity flagged.':'Flag removed.','info');
+}
+
+// ── OVERRIDE STATUS ───────────────────────────────────────────────────────────
+async function overrideStatus(projId,actId,newStatus) {
+  const act=getAct(projId,actId); if(!act) return;
+  act.status=newStatus;
+  if(newStatus==='Completed'&&!act.complete_date) act.complete_date=isoDate(new Date());
+  await dbUpdateActivity(act);
+  renderDetail(projId,'','all',currentSelection);
+  renderDashboard();
+  showToast(`Status set to ${newStatus}.`,'success');
+}
+
+// ── INSERT ACTIVITY ───────────────────────────────────────────────────────────
+let insertAfterActId=null, insertProjId2=null;
+function openInsertAct(projId,afterActId) {
+  insertAfterActId=afterActId; insertProjId2=projId;
+  const act=getAct(projId,afterActId);
+  document.getElementById('insertActDesc').textContent=`Inserting below: ${act?.name}`;
+  document.getElementById('insertActName').value='';
+  document.getElementById('insertActStage').value=act?.stage||'BASE STAGE';
+  openModal('insertActModal');
+}
+async function confirmInsertActivity() {
+  const name=document.getElementById('insertActName').value.trim();
+  if(!name){showToast('Name required.','error');return;}
+  const proj=projects.find(p=>p.id===insertProjId2);
+  const acts=proj.activities||[];
+  const insertIdx=acts.findIndex(a=>a.id===insertAfterActId);
+  const toShift=acts.slice(insertIdx+1);
+  for(const a of toShift){a.num++;await sb.from('activities').update({num:a.num}).eq('id',a.id);}
+  const newNum=(acts[insertIdx]?.num||0)+1;
+  const newAct={project_id:insertProjId2,num:newNum,name,
+    stage:document.getElementById('insertActStage').value,
+    vendor_id:'',call_date:null,for_date:null,actual_start:null,
+    complete_date:null,status:'Pending',notes:'',flagged:false,
+    comments:[],comment_visible:true};
+  await dbAddActivity(newAct);
+  await dbFetch();
+  closeModal('insertActModal');
+  document.getElementById('insertActName').value='';
+  renderDetail(insertProjId2,'','all',currentSelection);
+  showToast(`"${name}" inserted.`,'success');
+}
+
+// ── COMMENTS ──────────────────────────────────────────────────────────────────
+let commentProjId=null,commentActId=null;
+function openComments(projId,actId) {
+  commentProjId=projId; commentActId=actId;
+  const act=getAct(projId,actId);
+  document.getElementById('commentActName').textContent=act?.name||'';
+  document.getElementById('commentText').value='';
+  renderCommentHistory(act);
+  openModal('commentModal');
+}
+function renderCommentHistory(act) {
+  const comments=act?.comments||[];
+  if(!comments.length){
+    document.getElementById('commentHistory').innerHTML='<div style="font-size:12px;color:var(--grey4);padding:8px 0">No comments yet.</div>';
+    return;
+  }
+  document.getElementById('commentHistory').innerHTML=[...comments].reverse().map((c,i)=>`
+    <div class="comment-entry ${i===0?'latest':''}">
+      <div class="comment-entry-text">${c.text}</div>
+      <div class="comment-entry-meta">${c.date}${i===0?' — <strong>Latest</strong>':''}</div>
+    </div>`).join('');
+}
+async function saveComment() {
+  const text=document.getElementById('commentText').value.trim();
+  if(!text){showToast('Please type a comment first.','error');return;}
+  const act=getAct(commentProjId,commentActId); if(!act) return;
+  if(!act.comments) act.comments=[];
+  act.comments.push({text,date:new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})});
+  act.comment_visible=true;
+  await dbUpdateActivity(act);
+  document.getElementById('commentText').value='';
+  renderCommentHistory(act);
+  renderDetail(commentProjId,'','all',currentSelection);
+  showToast('Comment saved.','success');
+}
+async function hideComment(projId,actId) {
+  const act=getAct(projId,actId); if(!act) return;
+  act.comment_visible=false;
+  await dbUpdateActivity(act);
+  renderDetail(projId,'','all',currentSelection);
+}
+
+// ── SELECTION ──────────────────────────────────────────────────────────────────
+let currentSelection=[];
+function toggleSelect(projId,actId,checked) {
+  if(checked){if(!currentSelection.includes(actId))currentSelection.push(actId);}
+  else{currentSelection=currentSelection.filter(id=>id!==actId);}
+  const tb=document.getElementById('bulkToolbar');
+  if(tb){
+    if(currentSelection.length>0)tb.classList.add('visible');
+    else tb.classList.remove('visible');
+    const bc=tb.querySelector('.bulk-count');
+    if(bc) bc.textContent=currentSelection.length+' selected';
+  }
+}
+function toggleSelectAll(projId,checked) {
+  const proj=projects.find(p=>p.id===projId);
+  currentSelection=checked?(proj.activities||[]).map(a=>a.id):[];
+  renderDetail(projId,'','all',currentSelection);
+}
+function selectAllActivities(projId) {
+  const proj=projects.find(p=>p.id===projId);
+  currentSelection=(proj.activities||[]).map(a=>a.id);
+  renderDetail(projId,'','all',currentSelection);
+}
+function clearSelection(projId) {
+  currentSelection=[];
+  renderDetail(projId,'','all',[]);
+}
+
+// ── BULK RESCHEDULE ───────────────────────────────────────────────────────────
+function openBulkReschedule(projId) {
+  if(!currentSelection.length){showToast('Select activities first.','error');return;}
+  const proj=projects.find(p=>p.id===projId);
+  const withDates=currentSelection.filter(id=>(proj?.activities||[]).find(a=>a.id===id)?.for_date);
+  document.getElementById('bulkReschedDesc').textContent=
+    `${currentSelection.length} selected — ${withDates.length} have For Dates that will be shifted.`;
+  openModal('bulkReschedModal');
+}
+async function confirmBulkReschedule() {
+  const days=parseInt(document.getElementById('bulkDaysShift').value)||7;
+  const dir=document.getElementById('bulkShiftDir').value;
+  const shift=dir==='forward'?days:-days;
+  let emailCount=0;
+  const selCopy=[...currentSelection];
+  for(const actId of selCopy) {
+    const act=getAct(curProjId,actId); if(!act) continue;
+    if(act.for_date){const d=parseLocal(act.for_date);d.setDate(d.getDate()+shift);act.for_date=isoDate(d);}
+    act.status='Pending'; act.call_date=isoDate(new Date());
+    await dbUpdateActivity(act);
+    if(act.vendor_id&&act.for_date){
+      const v=vendors.find(x=>x.id===act.vendor_id);
+      if(v?.email){pendingSend={projId:curProjId,actId:act.id};await confirmSendSilent();emailCount++;await new Promise(r=>setTimeout(r,400));}
+    }
+  }
+  closeModal('bulkReschedModal');
+  await dbFetch(); currentSelection=[];
+  renderDetail(curProjId,'','all',[]); renderDashboard();
+  showToast(`Rescheduled ${selCopy.length} activities. ${emailCount} emails sent.`,'success');
+}
+
+// ── BULK CALL OFF ─────────────────────────────────────────────────────────────
+function openBulkCallOff(projId) {
+  if(!currentSelection.length){showToast('Select activities first.','error');return;}
+  document.getElementById('bulkCallOffDesc').textContent=`${currentSelection.length} activities will be called off.`;
+  document.getElementById('callOffMessage').value='';
+  openModal('bulkCallOffModal');
+}
+async function confirmBulkCallOff() {
+  const message=document.getElementById('callOffMessage').value.trim()||'Works have been postponed. We will be in touch shortly with a new date.';
+  const proj=projects.find(p=>p.id===curProjId);
+  let emailCount=0;
+  const selCopy=[...currentSelection];
+  for(const actId of selCopy) {
+    const act=getAct(curProjId,actId); if(!act) continue;
+    act.status='Pending'; act.notes='Called off — '+message;
+    await dbUpdateActivity(act);
+    if(act.vendor_id){
+      const v=vendors.find(x=>x.id===act.vendor_id);
+      if(v?.email){
+        const body=`Dear ${v.name},
+
+Works for ${act.name} at ${proj?.address} have been temporarily postponed.
+
+${message}
+
+We will confirm a new date shortly.
+
+Kind regards,
+Taha Zaidi
+ONE10 CONSTRUCTIONS
+0405 080 275`;
+        if(emailjsCfg.key&&emailjsCfg.serviceId&&emailjsCfg.templateId){
+          try{await emailjs.send(emailjsCfg.serviceId,emailjsCfg.templateId,{to_email:v.email,to_name:v.name,from_name:'Taha Zaidi — ONE10 Constructions',subject:`Schedule Update — ${act.name} | ${proj?.address}`,message:body,reply_to:'Info@one10constructions.com.au',response_link:'N/A',activity:act.name,address:proj?.address||'',stage:act.stage,for_date:'TBD'});}catch(e){}
+        } else {
+          window.open(`mailto:${v.email}?subject=${encodeURIComponent('Schedule Update — '+act.name)}&body=${encodeURIComponent(body)}`);
+        }
+        emailCount++; await new Promise(r=>setTimeout(r,400));
+      }
+    }
+  }
+  closeModal('bulkCallOffModal');
+  await dbFetch(); currentSelection=[];
+  renderDetail(curProjId,'','all',[]); renderDashboard();
+  showToast(`${selCopy.length} activities called off. ${emailCount} emails sent.`,'success');
+}
+
+// ── SILENT SEND (bulk) ────────────────────────────────────────────────────────
+async function confirmSendSilent() {
+  if(!pendingSend) return;
+  const {projId,actId}=pendingSend;
+  const proj=projects.find(p=>p.id===projId),act=getAct(projId,actId);
+  const v=vendors.find(x=>x.id===act?.vendor_id);
+  if(!v?.email||!act?.for_date) return;
+  const link=`https://110tz.github.io/ONE10SCHEDULER/respond.html?proj=${projId}&act=${act.num}`;
+  const forFmt=fmtDate(act.for_date);
+  if(emailjsCfg.key&&emailjsCfg.serviceId&&emailjsCfg.templateId){
+    try{await emailjs.send(emailjsCfg.serviceId,emailjsCfg.templateId,{to_email:v.email,to_name:v.name,from_name:'Taha Zaidi — ONE10 Constructions',subject:`Updated Schedule — ${act.name} | ${proj?.address}`,message:`Dear ${v.name},
+
+Your scheduled date for ${act.name} at ${proj?.address} has been updated.
+
+New For Date: ${forFmt}
+
+Please confirm: ${link}
+
+Kind regards,
+Taha Zaidi
+ONE10 CONSTRUCTIONS
+0405 080 275`,reply_to:'Info@one10constructions.com.au',response_link:link,activity:act.name,address:proj?.address||'',stage:act.stage,for_date:forFmt});}
+    catch(e){console.error('Silent email failed:',e);}
+  }
+}
+
 function showToast(msg, type='info') {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = `toast ${type} show`;
@@ -554,6 +978,10 @@ async function dbSeedIfEmpty() {
   if (data && data.length > 0) return; // already seeded
 
   showToast('First run — setting up your projects...', 'info');
+  // Ensure new columns exist (safe to run multiple times)
+  try {
+    await sb.rpc('exec', { query: "ALTER TABLE activities ADD COLUMN IF NOT EXISTS flagged boolean DEFAULT false; ALTER TABLE activities ADD COLUMN IF NOT EXISTS comments jsonb DEFAULT '[]'; ALTER TABLE activities ADD COLUMN IF NOT EXISTS comment_visible boolean DEFAULT true;" });
+  } catch(e) { /* columns may already exist */ }
 
   // Insert projects
   await sb.from('projects').upsert([
@@ -590,14 +1018,17 @@ async function dbSeedIfEmpty() {
 async function dbUpdateActivity(act) {
   setSyncStatus('Saving...', 'var(--yellow)');
   const { error } = await sb.from('activities').update({
-    vendor_id:    act.vendor_id,
-    call_date:    act.call_date    || null,
-    for_date:     act.for_date     || null,
-    actual_start: act.actual_start || null,
-    complete_date:act.complete_date|| null,
-    status:       act.status,
-    notes:        act.notes        || '',
-    updated_at:   new Date().toISOString()
+    vendor_id:     act.vendor_id,
+    call_date:     act.call_date     || null,
+    for_date:      act.for_date      || null,
+    actual_start:  act.actual_start  || null,
+    complete_date: act.complete_date || null,
+    status:        act.status,
+    notes:         act.notes         || '',
+    flagged:       act.flagged       || false,
+    comments:      act.comments      || [],
+    comment_visible: act.comment_visible !== false,
+    updated_at:    new Date().toISOString()
   }).eq('id', act.id);
   if (error) { showToast('Save failed: '+error.message, 'error'); setSyncStatus('Error', 'var(--red)'); }
   else setSyncStatus('Saved ✓');
@@ -750,15 +1181,30 @@ function renderDashboard() {
     const pct   = Math.round(done2/Math.max(a.length,1)*100);
     const pend2 = a.filter(x=>x.status==='Pending').length;
     const conf2 = a.filter(x=>x.status==='Confirmed').length;
-    return `<div class="proj-card" onclick="openProject('${p.id}')">
-      <div class="proj-name">${p.name}</div>
-      <div class="proj-addr">${p.address}${p.lot?' — '+p.lot:''}</div>
-      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+    const flagged = a.filter(x=>x.flagged).length;
+    return `<div class="proj-card" style="position:relative" onclick="openProject('${p.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="proj-name">${p.name}</div>
+          <div class="proj-addr">${p.address}${p.lot?' — '+p.lot:''}</div>
+        </div>
+        <div class="dots-menu" onclick="event.stopPropagation()">
+          <button class="dots-btn" onclick="toggleDotsMenu('dots-${p.id}')">⋯</button>
+          <div class="dots-dropdown" id="dots-${p.id}">
+            <button class="dots-item" onclick="openProject('${p.id}');closeAllMenus()">📋 Open Project</button>
+            <button class="dots-item" onclick="openDupProj('${p.id}');closeAllMenus()">📑 Duplicate Project</button>
+            <div class="dots-divider"></div>
+            <button class="dots-item danger" onclick="deleteProject('${p.id}');closeAllMenus()">🗑 Delete Project</button>
+          </div>
+        </div>
+      </div>
+      <div class="prog-bar" style="margin-top:12px"><div class="prog-fill" style="width:${pct}%"></div></div>
       <div class="prog-stats"><span>${pct}% complete</span><span>${a.length} activities</span></div>
       <div class="status-pills">
         <div class="pill pill-pending">⬤ ${pend2} Pending</div>
         <div class="pill pill-confirm">⬤ ${conf2} Confirmed</div>
         ${done2?`<div class="pill pill-done">⬤ ${done2} Done</div>`:''}
+        ${flagged?`<div class="pill" style="background:rgba(234,179,8,.15);color:#eab308">⚑ ${flagged} Flagged</div>`:''}
       </div></div>`;
   }).join('') + `<div class="proj-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:130px" onclick="openModal('projectModal')">
     <div style="text-align:center;color:var(--grey3)"><div style="font-size:24px;margin-bottom:6px">+</div>
@@ -791,7 +1237,7 @@ function openProject(id) {
   renderDetail(id);
 }
 
-function renderDetail(projId, search='', stageF='all') {
+function renderDetail(projId, search='', stageF='all', selIds=[]) {
   const proj = projects.find(p=>p.id===projId);
   if (!proj) return;
   const acts = proj.activities || [];
@@ -805,35 +1251,77 @@ function renderDetail(projId, search='', stageF='all') {
     return ms && mst;
   });
 
+  const stageProgress = {};
+  stages.forEach(s => {
+    const sa = acts.filter(a=>a.stage===s);
+    stageProgress[s] = { total:sa.length, done:sa.filter(a=>a.status==='Completed').length };
+  });
+  const today = new Date(); today.setHours(0,0,0,0);
+
   let rows='', prevStage='', alt=false;
   filtered.forEach(act => {
     if (act.stage !== prevStage) {
       const sc = STAGE_COLS[act.stage]||'#888';
-      rows += `<tr class="stage-hdr"><td colspan="11" style="background:${sc}18;color:${sc};border-left:3px solid ${sc}">▶ &nbsp; ${act.stage}</td></tr>`;
+      const sp = stageProgress[act.stage]||{total:0,done:0};
+      rows += `<tr class="stage-hdr"><td colspan="13" style="background:${sc}18;color:${sc};border-left:3px solid ${sc}">
+        <span style="font-family:'Bebas Neue',sans-serif;letter-spacing:2px">&#9658; &nbsp; ${act.stage}</span>
+        <span style="font-size:10px;font-weight:400;letter-spacing:0;font-family:'DM Sans',sans-serif;opacity:.7;margin-left:12px">${sp.done}/${sp.total} complete</span>
+      </td></tr>`;
       prevStage=act.stage; alt=false;
     }
     const sc2 = ({Pending:'s-pending',Confirmed:'s-confirmed',Declined:'s-declined','Alt Date Proposed':'s-alt',Completed:'s-done'})[act.status]||'s-pending';
     const canSend = !!(act.vendor_id && act.for_date);
     const isDone  = act.status==='Completed';
-    const selV    = vOpts.replace(`value="${act.vendor_id}"`,`value="${act.vendor_id}" selected`);
+    const isFlagged = !!act.flagged;
+    const isSelected = selIds.includes(act.id);
+    const selV = vOpts.replace(`value="${act.vendor_id}"`,`value="${act.vendor_id}" selected`);
+    const forD = act.for_date ? parseLocal(act.for_date) : null;
+    const weekEnd = new Date(today); weekEnd.setDate(today.getDate()+7);
+    const isDueThisWeek = forD && forD >= today && forD <= weekEnd && !isDone;
+    const isOverdue = forD && forD < today && !isDone;
+    const comments = act.comments || [];
+    const latestComment = comments.length > 0 ? comments[comments.length-1] : null;
+    const commentVisible = act.comment_visible !== false && latestComment;
+    const statusOpts = ['Pending','Confirmed','Declined','Alt Date Proposed','Completed']
+      .map(s=>`<option value="${s}" ${act.status===s?'selected':''}>${s}</option>`).join('');
+    let rowStyle = '';
+    if (isDueThisWeek) rowStyle = 'outline:1px solid rgba(59,130,246,.3);';
+    if (isOverdue) rowStyle = 'outline:1px solid rgba(239,68,68,.3);';
 
-    rows += `<tr class="act-row ${alt?'alt':''} ${isDone?'completed':''}" id="ar-${projId}-${act.id}">
-      <td class="act-num">${act.num}</td>
-      <td class="act-name">${act.name}</td>
+    rows += `<tr class="act-row ${alt?'alt':''} ${isDone?'completed':''} ${isFlagged?'flagged':''}" id="ar-${projId}-${act.id}" style="${rowStyle}">
+      <td><input type="checkbox" class="act-checkbox" ${isSelected?'checked':''} onchange="toggleSelect('${projId}',${act.id},this.checked)"></td>
+      <td class="act-num" style="position:relative">
+        ${act.num}
+        <button class="insert-act-btn" onclick="openInsertAct('${projId}',${act.id})" title="Insert activity below">+</button>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${isFlagged?'<span style="color:var(--yellow);font-size:12px">&#9873;</span>':''}
+          ${isDueThisWeek?'<span style="color:#3b82f6;font-size:10px;font-weight:700;flex-shrink:0">THIS WEEK</span>':''}
+          ${isOverdue?'<span style="color:var(--red);font-size:10px;font-weight:700;flex-shrink:0">OVERDUE</span>':''}
+          <span class="act-name">${act.name}</span>
+        </div>
+        ${commentVisible ? `<div class="comment-preview">&#128172; ${latestComment.text} <span class="hide-link" onclick="hideComment('${projId}',${act.id})">hide</span></div>` : ''}
+      </td>
       <td><select class="trade-select" onchange="setVendor('${projId}',${act.id},this.value)">${selV}</select></td>
       <td>${dateBtnHTML(projId,act.id,'call_date','call-col','— / — / —')}</td>
       <td>${dateBtnHTML(projId,act.id,'for_date','for-col','— / — / —')}</td>
       <td>${dateBtnHTML(projId,act.id,'actual_start','start-col','— / — / —')}</td>
       <td>${dateBtnHTML(projId,act.id,'complete_date','complete-col','— / — / —')}</td>
-      <td><span class="status-dot ${sc2}">${act.status}</span></td>
+      <td><select class="trade-select" style="font-size:10px;padding:3px 6px" onchange="overrideStatus('${projId}',${act.id},this.value)">${statusOpts}</select></td>
       <td><button class="send-btn" ${canSend&&!isDone?'':'disabled'} onclick="initSend('${projId}',${act.id})">${act.status==='Pending'?'SEND':'RESEND'}</button></td>
-      <td><button class="del-btn" onclick="deleteActivity('${projId}',${act.id})" title="Remove">✕</button></td>
+      <td style="white-space:nowrap">
+        <button class="flag-btn" onclick="toggleFlag('${projId}',${act.id})" title="${isFlagged?'Unflag':'Flag'}" style="${isFlagged?'color:var(--yellow)':''}">&#9873;</button>
+        <button class="comment-btn ${comments.length>0?'has-comment':''}" onclick="openComments('${projId}',${act.id})" title="Comments">${comments.length>0?'&#128172;<sup style=\'font-size:8px\'>'+comments.length+'</sup>':'&#128172;'}</button>
+        <button class="del-btn" onclick="deleteActivity('${projId}',${act.id})" title="Remove">&#10005;</button>
+      </td>
     </tr>`;
     alt=!alt;
   });
 
+  const selCount = selIds.length;
   document.getElementById('projectDetail').innerHTML = `
-    <div class="back-btn" onclick="renderProjectsList()">← Projects</div>
+    <div class="back-btn" onclick="renderProjectsList()">&#8592; Projects</div>
     <div class="proj-header-row">
       <div>
         <div class="page-title" style="font-size:26px">${proj.name}</div>
@@ -841,18 +1329,27 @@ function renderDetail(projId, search='', stageF='all') {
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="add-act-btn" onclick="openAddAct('${projId}')">+ Add Activity</button>
-        <button class="add-btn" style="font-size:10px;padding:7px 12px" onclick="bulkSend('${projId}')">📧 Send All Pending</button>
+        <button class="add-btn" style="font-size:10px;padding:7px 12px" onclick="bulkSend('${projId}')">&#128231; Send All Pending</button>
       </div>
     </div>
-    <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:9px;height:9px;border-radius:2px;background:#f59e0b;display:inline-block"></span><span style="color:var(--grey4)">Call Date</span></div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:9px;height:9px;border-radius:2px;background:#3b82f6;display:inline-block"></span><span style="color:var(--grey4)">For Date</span></div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:9px;height:9px;border-radius:2px;background:#22c55e;display:inline-block"></span><span style="color:var(--grey4)">Start Date</span></div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:9px;height:9px;border-radius:2px;background:#a855f7;display:inline-block"></span><span style="color:var(--grey4)">Complete Date — closes activity</span></div>
+    <div class="bulk-toolbar ${selCount>0?'visible':''}" id="bulkToolbar">
+      <div class="bulk-count">${selCount} selected</div>
+      <button class="bulk-btn" onclick="selectAllActivities('${projId}')">Select All</button>
+      <button class="bulk-btn" onclick="clearSelection('${projId}')">Clear</button>
+      <button class="bulk-btn primary" onclick="openBulkReschedule('${projId}')">&#128197; Bulk Reschedule</button>
+      <button class="bulk-btn danger" onclick="openBulkCallOff('${projId}')">&#9940; Bulk Call Off</button>
+    </div>
+    <div style="display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap;font-size:11px">
+      <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:2px;background:#f59e0b;display:inline-block"></span><span style="color:var(--grey4)">Call</span></div>
+      <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:2px;background:#3b82f6;display:inline-block"></span><span style="color:var(--grey4)">For</span></div>
+      <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:2px;background:#22c55e;display:inline-block"></span><span style="color:var(--grey4)">Start</span></div>
+      <div style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:2px;background:#a855f7;display:inline-block"></span><span style="color:var(--grey4)">Complete</span></div>
+      <div style="display:flex;align-items:center;gap:5px"><span style="color:var(--yellow)">&#9873;</span><span style="color:var(--grey4)">Flagged</span></div>
+      <div style="display:flex;align-items:center;gap:5px"><span style="color:#3b82f6;font-weight:700">THIS WEEK</span><span style="color:var(--grey4)">Due this week</span></div>
     </div>
     <div class="filter-bar">
-      <input class="search-input" placeholder="Search activities..." value="${search}" oninput="renderDetail('${projId}',this.value,'${stageF}')">
-      <select class="filter-select" onchange="renderDetail('${projId}','${search}',this.value)">
+      <input class="search-input" placeholder="Search activities..." value="${search}" oninput="renderDetail('${projId}',this.value,'${stageF}',currentSelection)">
+      <select class="filter-select" onchange="renderDetail('${projId}','${search}',this.value,currentSelection)">
         <option value="all" ${stageF==='all'?'selected':''}>All Stages</option>${stageOpts}
       </select>
       <span style="font-size:11px;color:var(--grey4)">${filtered.length} activit${filtered.length===1?'y':'ies'}</span>
@@ -860,12 +1357,17 @@ function renderDetail(projId, search='', stageF='all') {
     <div class="schedule-wrap">
       <table class="schedule-table">
         <thead><tr>
-          <th style="width:36px">#</th><th style="min-width:180px">Activity</th><th style="min-width:130px">Vendor</th>
-          <th class="th-call" style="min-width:105px">📞 Call Date</th>
-          <th class="th-for"  style="min-width:105px">📅 For Date</th>
-          <th class="th-start" style="min-width:105px">🏗 Start Date</th>
-          <th class="th-complete" style="min-width:105px">✅ Complete</th>
-          <th style="min-width:110px">Status</th><th style="min-width:80px">Email</th><th style="width:36px"></th>
+          <th style="width:24px"><input type="checkbox" class="act-checkbox" onchange="toggleSelectAll('${projId}',this.checked)"></th>
+          <th style="width:36px">#</th>
+          <th style="min-width:200px">Activity</th>
+          <th style="min-width:130px">Vendor</th>
+          <th class="th-call" style="min-width:100px">&#128222; Call</th>
+          <th class="th-for"  style="min-width:100px">&#128197; For</th>
+          <th class="th-start" style="min-width:100px">&#127959; Start</th>
+          <th class="th-complete" style="min-width:100px">&#9989; Done</th>
+          <th style="min-width:130px">Status</th>
+          <th style="min-width:75px">Email</th>
+          <th style="width:85px"></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
