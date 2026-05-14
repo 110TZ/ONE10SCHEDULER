@@ -198,9 +198,10 @@ function loadActivity() {
   var projId = params.projId;
   var actId = params.actId;
 
+  actId = parseInt(actId);
   if (!projId || !actId) { showError(); return; }
 
-  sb.from('activities').select('*').eq('id', actId).single()
+  sb.from('activities').select('*').eq('id', parseInt(actId)).single()
     .then(function(r) {
       if (r.error || !r.data) { showError(); return; }
       activityData = r.data;
