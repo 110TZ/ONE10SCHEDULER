@@ -2164,6 +2164,22 @@ function renderOverdueBanner() {
     + '</div>';
 }
 
+function switchProjTab(tab, projId) {
+  ['schedule','comments','delays'].forEach(function(t) {
+    var btn = document.getElementById('tab-'+t);
+    var content = document.getElementById('tabcontent-'+t);
+    if (btn) btn.classList.remove('active');
+    if (content) content.classList.remove('active');
+  });
+  var btn = document.getElementById('tab-'+tab);
+  var content = document.getElementById('tabcontent-'+tab);
+  if (btn) btn.classList.add('active');
+  if (content) content.classList.add('active');
+  // Render content if needed
+  if (tab === 'comments' && projId) renderProjectComments(projId);
+  if (tab === 'delays' && projId) renderDelaysTab(projId);
+}
+
 boot();
 </script>
 </body>
