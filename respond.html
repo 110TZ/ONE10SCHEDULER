@@ -169,7 +169,7 @@ function getParams() {
   var p = new URLSearchParams(window.location.search);
   return {
     projId: p.get('proj'),
-    actNum: parseInt(p.get('act'))
+    actId: p.get('act')
   };
 }
 
@@ -196,11 +196,11 @@ function showSuccess(status) {
 function loadActivity() {
   var params = getParams();
   var projId = params.projId;
-  var actNum = params.actNum;
+  var actId = params.actId;
 
-  if (!projId || !actNum) { showError(); return; }
+  if (!projId || !actId) { showError(); return; }
 
-  sb.from('activities').select('*').eq('project_id', projId).eq('num', actNum).single()
+  sb.from('activities').select('*').eq('id', actId).single()
     .then(function(r) {
       if (r.error || !r.data) { showError(); return; }
       activityData = r.data;
