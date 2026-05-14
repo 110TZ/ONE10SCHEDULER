@@ -1010,11 +1010,11 @@ function renderDetail(projId,search,stageF,selIds) {
   var cTabLabel=hasRecent?'Comments':'Comments (!)';
   var delayDays=(proj.delays||[]).reduce(function(s,d){return s+(d.days_lost||0);},0);
   var delayCount=(proj.delays||[]).length;
-  var tabsHtml='<div class="proj-tab-bar">';
-  tabsHtml+='<button class="proj-tab active" id="tab-schedule" onclick="switchProjTab(\'schedule\',\''+projId+'\')">' + '&#128197; Schedule</button>';
-  tabsHtml+='<button class="proj-tab" id="tab-comments" onclick="switchProjTab(\'comments\',\''+projId+'\')" style="'+cTabStyle+'">'+cTabLabel+'</button>';
-  tabsHtml+='<button class="proj-tab" id="tab-delays" onclick="switchProjTab(\'delays\',\''+projId+'\')">' + '&#9888; Delays'+(delayCount>0?' ('+delayDays+'d)':'')+'</button>';
-  tabsHtml+='</div>';
+  var tabsHtml = '<div class="proj-tab-bar">';
+  tabsHtml += '<button class="proj-tab active" id="tab-schedule" onclick="switchProjTab(this,&quot;'+projId+'&quot;,&quot;schedule&quot;)">Schedule</button>';
+  tabsHtml += '<button class="proj-tab" id="tab-comments" onclick="switchProjTab(this,&quot;'+projId+'&quot;,&quot;comments&quot;)" style="'+cTabStyle+'">'+cTabLabel+'</button>';
+  tabsHtml += '<button class="proj-tab" id="tab-delays" onclick="switchProjTab(this,&quot;'+projId+'&quot;,&quot;delays&quot;)">Delays'+(delayCount>0?' ('+delayDays+'d)':'')+'</button>';
+  tabsHtml += '</div>';
   var schedHtml='<div class="proj-tab-content active" id="tabcontent-schedule">'+html+'</div>';
   schedHtml+='<div class="proj-tab-content" id="tabcontent-comments"><div id="projCommentsBody" style="padding:4px 0"></div></div>';
   schedHtml+='<div class="proj-tab-content" id="tabcontent-delays"><div id="projDelaysBody" style="padding:4px 0"></div></div>';
@@ -2164,7 +2164,7 @@ function renderOverdueBanner() {
     + '</div>';
 }
 
-function switchProjTab(tab, projId) {
+function switchProjTab(el, projId, tab) {
   ['schedule','comments','delays'].forEach(function(t) {
     var btn = document.getElementById('tab-'+t);
     var content = document.getElementById('tabcontent-'+t);
@@ -2175,7 +2175,6 @@ function switchProjTab(tab, projId) {
   var content = document.getElementById('tabcontent-'+tab);
   if (btn) btn.classList.add('active');
   if (content) content.classList.add('active');
-  // Render content if needed
   if (tab === 'comments' && projId) renderProjectComments(projId);
   if (tab === 'delays' && projId) renderDelaysTab(projId);
 }
