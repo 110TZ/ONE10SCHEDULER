@@ -520,7 +520,11 @@ function getParams() {
 async function loadActivity() {
   const { projId, actNum } = getParams();
 
+  // Show what params we got for debugging
+  console.log('Loading activity - proj:', projId, 'act:', actNum);
+
   if (!projId || !actNum) {
+    console.log('Missing params');
     showError(); return;
   }
 
@@ -533,6 +537,7 @@ async function loadActivity() {
       .eq('num', actNum)
       .single();
 
+    console.log('Activity result:', acts, 'Error:', aErr);
     if (aErr || !acts) { showError(); return; }
     activityData = acts;
 
@@ -830,7 +835,21 @@ function showError() {
 }
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
-loadActivity();
+// Add timeout so it doesn't spin forever
+var loadTimeout = setTimeout(function() {
+  var loading = document.getElementById('loadingState');
+  if (loading && loading.style.display !== 'none') {
+    showError();
+  }
+}, 10000);
+
+loadActivity().then(function() {
+  clearTimeout(loadTimeout);
+}).catch(function(e) {
+  console.error('Load failed:', e);
+  clearTimeout(loadTimeout);
+  showError();
+});
 </script>
 </body>
 </html>
