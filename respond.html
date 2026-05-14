@@ -199,11 +199,32 @@ function loadActivity() {
   var actId = params.actId;
 
   actId = parseInt(actId);
-  if (!projId || !actId) { showError(); return; }
 
-  sb.from('activities').select('*').eq('id', parseInt(actId)).single()
+  // Show debug info on screen
+  document.getElementById('loadingState').innerHTML =
+    '<div style="font-size:13px;color:#888;text-align:center;padding:20px">' +
+    'Connecting...<br><br>' +
+    '<span style="font-size:11px;color:#555">proj=' + projId + ' act=' + actId + '</span>' +
+    '</div>';
+
+  if (!projId || !actId) {
+    document.getElementById('loadingState').innerHTML = '<div style="color:red;padding:20px">Missing params: proj=' + projId + ' act=' + actId + '</div>';
+    showError(); return;
+  }
+
+  sb.from('activities').select('*').eq('id', actId).single()
     .then(function(r) {
-      if (r.error || !r.data) { showError(); return; }
+      if (r.error || !r.data) {
+        document.getElementById('loadingState').innerHTML =
+          '<div style="color:red;padding:20px;font-size:12px">' +
+          'Query failed<br>' +
+          'proj=' + projId + '<br>' +
+          'act id=' + actId + '<br>' +
+          'error=' + JSON.stringify(r.error) + '<br>' +
+          'data=' + JSON.stringify(r.data) +
+          '</div>';
+        showError(); return;
+      }
       activityData = r.data;
 
       return Promise.all([
