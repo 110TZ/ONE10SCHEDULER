@@ -1317,7 +1317,7 @@ function confirmSend() {
   closeModal('sendModal');
   act.call_date=isoDate(new Date());
   dbUpdateActivity(act);
-  var link='https://110tz.github.io/ONE10SCHEDULER/respond.html?proj='+projId+'&act='+act.num;
+  var link='https://110tz.github.io/ONE10SCHEDULER/respond.html?proj='+projId+'&act='+act.id;
   var forFmt=fmtDate(act.for_date);
   var body='Dear '+v.name+',\n\nI am writing on behalf of ONE10 Constructions to formally advise of your scheduled date for the upcoming works below.\n\n---\nProject Address:  '+proj.address+'\nActivity:         '+act.name+'\nStage:            '+act.stage+'\nFor Date:         '+forFmt+'\n---\n\nPlease confirm your availability by clicking the link below:\n\n'+link+'\n\nYOUR RESPONSE OPTIONS:\n  CONFIRMED - I confirm the scheduled date\n  DECLINED  - I am unable to attend (reason MANDATORY)\n  ALT DATE  - I propose a different date (date MANDATORY)\n\nKind regards,\nTaha Zaidi\nProject Manager\nONE10 CONSTRUCTIONS\nP: 0405 080 275\nE: Info@one10constructions.com.au\n\n---\nThis is an automated scheduling notice from ONE10 Constructions.';
   if(emailjsCfg.key&&emailjsCfg.serviceId&&emailjsCfg.templateId) {
@@ -1359,7 +1359,7 @@ function sendSilent(projId,actId) {
   var proj=projects.find(function(p){return p.id===projId;}), act=getAct(projId,actId);
   var v=vendors.find(function(x){return x.id===act.vendor_id;});
   if(!v||!v.email||!act.for_date) return Promise.resolve();
-  var link='https://110tz.github.io/ONE10SCHEDULER/respond.html?proj='+projId+'&act='+act.num;
+  var link='https://110tz.github.io/ONE10SCHEDULER/respond.html?proj='+projId+'&act='+act.id;
   var forFmt=fmtDate(act.for_date);
   var body='Dear '+v.name+',\n\nI am writing on behalf of ONE10 Constructions to advise that your previously scheduled date for the following works has been updated. Please review the new date and reconfirm your availability at your earliest convenience.\n\n---\nProject Address:  '+proj.address+'\nActivity:         '+act.name+'\nStage:            '+act.stage+'\nUpdated For Date: '+forFmt+'\n---\n\nPlease click the link below to confirm, decline, or propose an alternative date:\n'+link+'\n\nWe apologise for any inconvenience caused by the schedule change.\n\nKind regards,\nTaha Zaidi\nProject Manager\nONE10 CONSTRUCTIONS\nP: 0405 080 275\nE: Info@one10constructions.com.au';
   if(emailjsCfg.key&&emailjsCfg.serviceId&&emailjsCfg.templateId) {
