@@ -6,6 +6,7 @@
 <title>Schedule Confirmation — ONE10 Constructions</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <style>
 :root {
   --black: #0a0a0a;
@@ -565,6 +566,12 @@ async function loadActivity() {
       document.getElementById('detailDate').textContent = 'TBD';
     }
 
+    // Load EmailJS settings for notification email
+    try {
+      var settingsRes = await sb.from('app_settings').select('emailjs').eq('id','main').single();
+      emailjsSettings = settingsRes.data ? settingsRes.data.emailjs : {};
+    } catch(e) { emailjsSettings = {}; }
+
     // Show card
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('mainCard').style.display = 'block';
@@ -739,6 +746,52 @@ async function submitResponse() {
     if (error) throw error;
 
     showSuccess(newStatus);
+
+    // Notify ONE10 by email
+    try {
+      var tradeName = document.getElementById('detailVendor').textContent || 'Trade';
+      var actName   = document.getElementById('detailActivity').textContent || 'Activity';
+      var projAddr  = document.getElementById('detailProject').textContent || 'Project';
+      var forDateTxt = document.getElementById('detailDate').textContent || '';
+      var responseMsg = newStatus === 'Confirmed'
+        ? tradeName + ' has CONFIRMED their scheduled date for ' + actName + ' at ' + projAddr + '.'
+        : newStatus === 'Declined'
+        ? tradeName + ' has DECLINED. Reason: ' + (document.getElementById('declineReason') ? document.getElementById('declineReason').value : 'Not provided')
+        : tradeName + ' has PROPOSED A NEW DATE: ' + (selectedAltDate ? selectedAltDate.toLocaleDateString('en-AU') : '') + ' for ' + actName + ' at ' + projAddr + '.';
+
+      await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: emailjsSettings.serviceId || 'service_placeholder',
+          template_id: emailjsSettings.templateId || 'template_placeholder',
+          user_id: emailjsSettings.key || 'user_placeholder',
+          template_params: {
+            to_email: 'Info@one10constructions.com.au',
+            to_name: 'Taha Zaidi',
+            from_name: 'ONE10 Schedule System',
+            subject: '[Trade Response] ' + tradeName + ' — ' + newStatus + ' — ' + actName,
+            message: 'TRADE RESPONSE RECEIVED
+
+' + responseMsg + '
+
+Activity: ' + actName + '
+Project: ' + projAddr + '
+For Date: ' + forDateTxt + '
+
+Log in to view and update:
+https://110tz.github.io/ONE10SCHEDULER/',
+            response_link: 'https://110tz.github.io/ONE10SCHEDULER/',
+            activity: actName,
+            address: projAddr,
+            stage: '',
+            for_date: forDateTxt
+          }
+        })
+      });
+    } catch(notifyErr) {
+      console.log('Notification failed silently:', notifyErr);
+    }
 
   } catch(e) {
     btn.disabled = false;
