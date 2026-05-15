@@ -486,9 +486,6 @@ function dbSeedIfEmpty() {
 
 function dbUpdateActivity(act) {
   setSyncStatus('Saving...','var(--yellow)');
-  // Prevent concurrent saves
-  if (act._saving) return Promise.resolve();
-  act._saving = true;
   return sb.from('activities').update({
     vendor_id:act.vendor_id,
     call_date:act.call_date||null,
@@ -502,7 +499,6 @@ function dbUpdateActivity(act) {
     comment_visible:act.comment_visible!==false,
     updated_at:new Date().toISOString()
   }).eq('id',act.id).then(function(r) {
-    act._saving = false;
     if (r.error) { showToast('Save failed','error'); setSyncStatus('Error','var(--red)'); }
     else { setSyncStatus('Saved'); setTimeout(function(){setSyncStatus('Live');},2000); }
   });
@@ -517,20 +513,8 @@ function dbAddActivity(act) {
 
 function subscribeRealtime() {
   sb.channel('db-changes')
-    .on('postgres_changes',{event:'*',schema:'public',table:'activities'},function(payload) {
-      // Update only the changed activity in memory instead of full refetch
-      if (payload && payload.new) {
-        var updated = payload.new;
-        projects.forEach(function(p) {
-          if (p.id === updated.project_id) {
-            var idx = (p.activities||[]).findIndex(function(a){return a.id===updated.id;});
-            if (idx > -1) {
-              p.activities[idx] = updated;
-            }
-          }
-        });
-      }
-      refreshCurrentView();
+    .on('postgres_changes',{event:'*',schema:'public',table:'activities'},function() {
+      dbFetch().then(function(){refreshCurrentView();});
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'vendors'},function() {
       dbFetch().then(function(){renderVendors();});
@@ -711,11 +695,6 @@ function openProject(id) {
 
 // -- RENDER DETAIL ------------------------------------------------------------
 function renderDetail(projId,search,stageF,selIds) {
-  // Throttle - skip if same content was just rendered
-  var renderKey = projId+'|'+search+'|'+stageF+'|'+(selIds||[]).join(',');
-  if (renderDetail._lastKey === renderKey && renderDetail._lastProjId === projId) return;
-  renderDetail._lastKey = renderKey;
-  renderDetail._lastProjId = projId;
   search=search||''; stageF=stageF||'all'; selIds=selIds||[];
   var proj=projects.find(function(p){return p.id===projId;});
   if (!proj) return;
