@@ -1102,6 +1102,7 @@ function hideComment(projId,actId) {
 
 // -- CALENDAR -----------------------------------------------------------------
 function openCal(projId,actId,field,anchorEl) {
+  showToast('Opening calendar: '+field, 'info');
   var act=getAct(projId,actId);
   var deps={for_date:'call_date',actual_start:'for_date',complete_date:'actual_start'};
   var labels={call_date:'Call Date',for_date:'For Date',actual_start:'Start Date',complete_date:'Complete Date'};
