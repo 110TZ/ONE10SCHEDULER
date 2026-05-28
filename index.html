@@ -868,14 +868,14 @@ function renderDetail(projId,search,stageF,selIds) {
   html+='<button class="bulk-btn" onclick="selectAllActivities(\''+projId+'\')">All</button>';
   html+='<button class="bulk-btn" onclick="clearSelection(\''+projId+'\')">Clear</button>';
   html+='<button class="bulk-btn primary" onclick="openBulkReschedule(\''+projId+'\')">Reschedule</button>';
-  html+='<button class="bulk-btn danger" onclick="openBulkCallOff(\''+projId+'\')">Call Off</button><button class="bulk-btn danger" onclick="openBulkClearDates(\\\'\'+projId+\'\\\')">Clear Dates</button></div>';
+  html+='<button class="bulk-btn danger" onclick="openBulkCallOff(\''+projId+'\')">Call Off</button><button class="bulk-btn danger" onclick="openBulkClearDates(\''+projId+'\')">Clear Dates</button></div>';
 
   // Tab bar
   html+='<div class="proj-tab-bar">';
   html+='<button class="proj-tab active" id="tab-schedule" onclick="switchProjTab(\'schedule\',\''+projId+'\')">Schedule</button>';
   html+='<button class="proj-tab" id="tab-comments" onclick="switchProjTab(\'comments\',\''+projId+'\')" style="'+cTabStyle+'">'+cTabLabel+'</button>';
   html+='<button class="proj-tab" id="tab-delays" onclick="switchProjTab(\'delays\',\''+projId+'\')">Delays'+(delayCount>0?' ('+delayDays+'d)':'')+'</button>';
-  html+='<button class="proj-tab" id="tab-budget" onclick="switchProjTab(\\\'budget\\\',\\\'\'+projId+\'\\\')">Budget</button>';
+  html+='<button class="proj-tab" id="tab-budget" onclick="switchProjTab(\'budget\',\''+projId+'\')">Budget</button>';
   html+='</div>';
 
   // Schedule tab
