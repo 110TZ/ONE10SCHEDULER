@@ -1102,11 +1102,15 @@ function hideComment(projId,actId) {
 
 // -- CALENDAR -----------------------------------------------------------------
 function openCal(projId,actId,field,anchorEl) {
+  try {
+  showToast('step1: entered', 'info');
   var act=getAct(projId,actId);
+  if(!act){ showToast('step1b: NO ACT FOUND for '+actId, 'error'); return; }
   var deps={for_date:'call_date',actual_start:'for_date',complete_date:'actual_start'};
   var labels={call_date:'Call Date',for_date:'For Date',actual_start:'Start Date',complete_date:'Complete Date'};
   var reqField=deps[field];
   if(reqField&&act&&!act[reqField]){showToast('Set '+labels[reqField]+' first.','error');return;}
+  showToast('step2: passed dep check', 'info');
   var existing=act?act[field]:null;
   var today=new Date();
   calState.projId=projId; calState.actId=actId; calState.field=field;
@@ -1135,12 +1139,17 @@ function openCal(projId,actId,field,anchorEl) {
   popup.style.borderColor=col+'66';
   var ml=el('calMonthLabel'); if(ml) ml.style.color=col;
   var ov=el('calOverlay'); if(ov) ov.classList.add('open');
+  showToast('step3: popup shown', 'info');
   // Now render the days - wrapped so any error doesn't prevent the popup showing
   try {
     renderCalPopupWithWeather();
+    showToast('step4: rendered OK', 'info');
   } catch(e) {
-    console.error('Calendar render error:', e);
+    showToast('RENDER ERROR: '+e.message, 'error');
     renderCalPopupBasic();
+  }
+  } catch(outerE) {
+    showToast('OUTER ERROR: '+outerE.message, 'error');
   }
 }
 function closeCal() {
