@@ -370,6 +370,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white)
 
 <div class="modal-overlay" id="bulkClearDatesModal"><div class="modal" style="width:420px"><div class="modal-title">CLEAR DATES</div><div style="font-size:13px;color:var(--grey5);margin-bottom:16px" id="bulkClearDesc"></div><div style="background:var(--black3);border-radius:6px;padding:12px 14px;font-size:12px;color:var(--grey4);margin-bottom:12px">No emails will be sent. This only clears dates and resets status to Pending.</div><div class="modal-actions"><button class="modal-cancel" onclick="closeModal('bulkClearDatesModal')">Cancel</button><button class="modal-save" style="background:var(--red);color:var(--white)" onclick="confirmBulkClearDates()">Clear Dates</button></div></div></div>
 
+<input type="file" id="photoFileInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelected(this)">
+
+<div class="modal-overlay" id="photoStageModal"><div class="modal" style="width:380px"><div class="modal-title">PHOTO STAGE</div><label class="modal-label">Which stage is this photo for?</label><select class="modal-select" id="photoStageSelect"><option value="Preliminaries">Preliminaries</option><option value="BASE STAGE">Base Stage</option><option value="FRAME">Frame</option><option value="LOCK UP">Lock Up</option><option value="FIX">Fix</option><option value="FINAL / COMPLETION">Final / Completion</option><option value="General">General</option></select><div class="modal-actions"><button class="modal-cancel" onclick="closeModal('photoStageModal')">Cancel</button><button class="modal-save" onclick="confirmPhotoStage()">Take Photo</button></div></div></div>
+
+<div class="modal-overlay" id="photoViewerModal"><div class="modal" style="width:90vw;max-width:700px;padding:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span id="photoViewerCount" style="font-size:12px;color:var(--grey4)"></span><button class="modal-cancel" onclick="closeModal('photoViewerModal')" style="padding:5px 12px">Close</button></div><div style="position:relative;background:var(--black);border-radius:8px;overflow:hidden"><img id="photoViewerImg" src="" style="width:100%;max-height:60vh;object-fit:contain;display:block"><button onclick="photoViewerNav(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer">&#8249;</button><button onclick="photoViewerNav(1)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer">&#8250;</button></div><div id="photoViewerCaption" style="padding:12px 4px 0"></div></div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -607,7 +613,7 @@ function updateMobileNav(p) {
   var e=el('mbn-'+p); if(e) e.classList.add('active');
 }
 function switchProjTab(tabName, projId) {
-  ['schedule','comments','delays','budget'].forEach(function(t){
+  ['schedule','comments','delays','budget','photos'].forEach(function(t){
     var btn=el('tab-'+t), content=el('tabcontent-'+t);
     if(btn) btn.classList.remove('active');
     if(content) content.classList.remove('active');
@@ -618,6 +624,7 @@ function switchProjTab(tabName, projId) {
   if(tabName==='comments') renderProjectComments(projId);
   if(tabName==='delays') renderDelaysTab(projId);
   if(tabName==='budget') renderBudgetTab(projId);
+  if(tabName==='photos') renderPhotosTab(projId);
 }
 
 // -- DASHBOARD ----------------------------------------------------------------
@@ -837,6 +844,7 @@ function renderDetail(projId,search,stageF,selIds) {
       rows+='<td><button class="send-btn"'+(canSend&&!isDone?'':' disabled')+' onclick="initSend(\''+projId+'\','+act.id+')">'+(act.status==='Pending'?'SEND':'RESEND')+'</button></td>';
       rows+='<td style="white-space:nowrap">';
       rows+='<button class="flag-btn" onclick="toggleFlag(\''+projId+'\','+act.id+')" style="'+(isFlagged?'color:var(--yellow)':'')+'">&#9873;</button>';
+      rows+='<button class="comment-btn" onclick="photoForActivity(\\\'\'+projId+\'\\\',\'+act.id+\')" title="Add photo">&#128247;</button>';
       rows+='<button class="comment-btn'+(comments.length>0?' has-comment':'')+'" onclick="openComments(\''+projId+'\','+act.id+')">&#128172;'+(comments.length>0?'<sup style="font-size:8px">'+comments.length+'</sup>':'')+'</button>';
       rows+='<button class="del-btn" onclick="deleteActivity(\''+projId+'\','+act.id+')">&#10005;</button></td>';
     }
@@ -876,6 +884,7 @@ function renderDetail(projId,search,stageF,selIds) {
   html+='<button class="proj-tab" id="tab-comments" onclick="switchProjTab(\'comments\',\''+projId+'\')" style="'+cTabStyle+'">'+cTabLabel+'</button>';
   html+='<button class="proj-tab" id="tab-delays" onclick="switchProjTab(\'delays\',\''+projId+'\')">Delays'+(delayCount>0?' ('+delayDays+'d)':'')+'</button>';
   html+='<button class="proj-tab" id="tab-budget" onclick="switchProjTab(\'budget\',\''+projId+'\')">Budget</button>';
+  html+='<button class="proj-tab" id="tab-photos" onclick="switchProjTab(\'photos\',\''+projId+'\')">Photos</button>';
   html+='</div>';
 
   // Schedule tab
@@ -908,11 +917,13 @@ function renderDetail(projId,search,stageF,selIds) {
   html+='<div class="proj-tab-content" id="tabcontent-comments"><div id="projCommentsBody" style="padding:4px 0"></div></div>';
   html+='<div class="proj-tab-content" id="tabcontent-delays"><div id="projDelaysBody" style="padding:4px 0"></div></div>';
   html+='<div class="proj-tab-content" id="tabcontent-budget"><div id="projBudgetBody" style="padding:4px 0"></div></div>';
+  html+='<div class="proj-tab-content" id="tabcontent-photos"><div id="projPhotosBody" style="padding:4px 0"></div></div>';
 
   el('projectDetail').innerHTML=html;
   renderProjectComments(projId);
   renderDelaysTab(projId);
   renderBudgetTab(projId);
+  renderPhotosTab(projId);
 }
 
 function dateBtnCell(projId,act,field,colClass) {
@@ -2264,6 +2275,203 @@ function deleteBudgetRow(projId, rowId) {
   sb.from('projects').update({ budget: proj.budget }).eq('id', projId).then(function() {
     renderBudgetTab(projId);
   });
+}
+
+
+
+// === PHOTOS =====================================================================
+var photoUploadProjId = null;
+var photoUploadStage = null;
+var photoUploadActId = null;
+var photoViewerList = [];
+var photoViewerIndex = 0;
+
+function compressImage(file, callback) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var maxW = 1200;
+      var scale = Math.min(1, maxW / img.width);
+      var canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(function(blob) { callback(blob); }, 'image/jpeg', 0.75);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function getPhotoLocation(callback) {
+  if (!navigator.geolocation) { callback(''); return; }
+  var done = false;
+  var timer = setTimeout(function(){ if(!done){done=true;callback('');} }, 3000);
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    if (done) return;
+    done = true; clearTimeout(timer);
+    var lat = pos.coords.latitude, lon = pos.coords.longitude;
+    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&zoom=18')
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        var addr = d.address || {};
+        var street = (addr.house_number ? addr.house_number + ' ' : '') + (addr.road || '');
+        callback(street || (addr.suburb || addr.city || ''));
+      }).catch(function(){ callback(''); });
+  }, function(){ if(!done){done=true;clearTimeout(timer);callback('');} }, {timeout:3000});
+}
+
+function photoForActivity(projId, actId) {
+  var act = getAct(projId, actId);
+  var stage = act ? act.stage : 'General';
+  triggerPhotoFromActivity(projId, actId, stage);
+}
+
+function triggerPhotoFromActivity(projId, actId, stage) {
+  photoUploadProjId = projId;
+  photoUploadActId = actId;
+  photoUploadStage = stage;
+  var input = document.getElementById('photoFileInput');
+  input.click();
+}
+
+function triggerPhotoFromTab(projId) {
+  photoUploadProjId = projId;
+  photoUploadActId = null;
+  // Ask for stage
+  openModal('photoStageModal');
+}
+
+function confirmPhotoStage() {
+  photoUploadStage = document.getElementById('photoStageSelect').value;
+  closeModal('photoStageModal');
+  document.getElementById('photoFileInput').click();
+}
+
+function handlePhotoSelected(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  input.value = '';
+  showToast('Compressing photo...', 'info');
+  
+  compressImage(file, function(blob) {
+    getPhotoLocation(function(location) {
+      var fileName = 'photo_' + Date.now() + '_' + Math.floor(Math.random()*10000) + '.jpg';
+      var path = photoUploadProjId + '/' + fileName;
+      
+      sb.storage.from('activity-photos').upload(path, blob, {
+        contentType: 'image/jpeg',
+        upsert: false
+      }).then(function(res) {
+        if (res.error) { showToast('Upload failed: ' + res.error.message, 'error'); return; }
+        var urlData = sb.storage.from('activity-photos').getPublicUrl(path);
+        var publicUrl = urlData.data.publicUrl;
+        var photoRecord = {
+          url: publicUrl,
+          path: path,
+          stage: photoUploadStage || 'General',
+          actId: photoUploadActId,
+          timestamp: new Date().toISOString(),
+          location: location || ''
+        };
+        // Save to project photos array
+        var proj = projects.find(function(p){ return p.id === photoUploadProjId; });
+        if (!proj.photos) proj.photos = [];
+        proj.photos.push(photoRecord);
+        sb.from('projects').update({ photos: proj.photos }).eq('id', photoUploadProjId).then(function() {
+          showToast('Photo uploaded!', 'success');
+          renderPhotosTab(photoUploadProjId);
+          renderDetail(photoUploadProjId, '', 'all', currentSelection);
+        });
+      });
+    });
+  });
+}
+
+function renderPhotosTab(projId) {
+  var proj = projects.find(function(p){ return p.id === projId; });
+  if (!proj) return;
+  var photos = (proj.photos || []).slice();
+  // Sort oldest first
+  photos.sort(function(a,b){ return new Date(a.timestamp) - new Date(b.timestamp); });
+  
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">';
+  html += '<div style="font-size:11px;color:var(--grey4);letter-spacing:1px;text-transform:uppercase">' + photos.length + ' photo' + (photos.length===1?'':'s') + '</div>';
+  html += '<button class="add-btn" onclick="triggerPhotoFromTab(\'' + projId + '\')">+ Add Photo</button>';
+  html += '</div>';
+  
+  if (photos.length === 0) {
+    html += '<div style="text-align:center;padding:50px 20px;color:var(--grey3)"><div style="font-size:40px;margin-bottom:12px;opacity:.3">&#128247;</div><div style="font-size:13px">No photos yet. Tap "Add Photo" to take one, or use the camera icon on any activity.</div></div>';
+    el('projPhotosBody').innerHTML = html;
+    return;
+  }
+  
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">';
+  photos.forEach(function(photo, idx) {
+    var d = new Date(photo.timestamp);
+    var dateStr = d.toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'});
+    var timeStr = d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    html += '<div style="background:var(--black2);border:1px solid var(--grey1);border-radius:8px;overflow:hidden">';
+    html += '<div style="aspect-ratio:1;background:var(--black3);cursor:pointer;position:relative;overflow:hidden" onclick="openPhotoViewer(\'' + projId + '\',' + idx + ')">';
+    html += '<img src="' + photo.url + '" style="width:100%;height:100%;object-fit:cover" loading="lazy">';
+    html += '</div>';
+    html += '<div style="padding:8px 10px">';
+    html += '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent,#f59e0b)">' + photo.stage + '</div>';
+    html += '<div style="font-size:10px;color:var(--grey4);margin-top:2px">' + dateStr + ' &middot; ' + timeStr + '</div>';
+    if (photo.location) html += '<div style="font-size:10px;color:var(--grey4);margin-top:1px">&#128205; ' + photo.location + '</div>';
+    html += '<button onclick="deletePhoto(\'' + projId + '\',' + idx + ')" style="background:transparent;border:none;color:var(--grey3);font-size:10px;cursor:pointer;padding:4px 0;margin-top:4px;text-decoration:underline">Delete</button>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+  
+  el('projPhotosBody').innerHTML = html;
+}
+
+function deletePhoto(projId, idx) {
+  if (!confirm('Delete this photo?')) return;
+  var proj = projects.find(function(p){ return p.id === projId; });
+  var photos = (proj.photos || []).slice();
+  photos.sort(function(a,b){ return new Date(a.timestamp) - new Date(b.timestamp); });
+  var photo = photos[idx];
+  if (!photo) return;
+  // Delete from storage
+  sb.storage.from('activity-photos').remove([photo.path]).then(function() {
+    proj.photos = (proj.photos || []).filter(function(p){ return p.path !== photo.path; });
+    sb.from('projects').update({ photos: proj.photos }).eq('id', projId).then(function() {
+      showToast('Photo deleted.', 'info');
+      renderPhotosTab(projId);
+      renderDetail(projId, '', 'all', currentSelection);
+    });
+  });
+}
+
+function openPhotoViewer(projId, idx) {
+  var proj = projects.find(function(p){ return p.id === projId; });
+  var photos = (proj.photos || []).slice();
+  photos.sort(function(a,b){ return new Date(a.timestamp) - new Date(b.timestamp); });
+  photoViewerList = photos;
+  photoViewerIndex = idx;
+  showPhotoInViewer();
+  openModal('photoViewerModal');
+}
+
+function showPhotoInViewer() {
+  var photo = photoViewerList[photoViewerIndex];
+  if (!photo) return;
+  var d = new Date(photo.timestamp);
+  var dateStr = d.toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}) + ' at ' + d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('photoViewerImg').src = photo.url;
+  document.getElementById('photoViewerCaption').innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent,#f59e0b)">' + photo.stage + '</div><div style="font-size:12px;color:var(--grey5);margin-top:3px">' + dateStr + '</div>' + (photo.location ? '<div style="font-size:11px;color:var(--grey4);margin-top:2px">&#128205; ' + photo.location + '</div>' : '');
+  document.getElementById('photoViewerCount').textContent = (photoViewerIndex+1) + ' / ' + photoViewerList.length;
+}
+
+function photoViewerNav(dir) {
+  photoViewerIndex += dir;
+  if (photoViewerIndex < 0) photoViewerIndex = photoViewerList.length - 1;
+  if (photoViewerIndex >= photoViewerList.length) photoViewerIndex = 0;
+  showPhotoInViewer();
 }
 
 boot();
