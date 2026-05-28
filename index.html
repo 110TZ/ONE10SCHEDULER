@@ -1113,11 +1113,12 @@ function openCal(projId,actId,field,anchorEl) {
   calState.selectedDate=existing?parseLocal(existing):null;
   calState.year=calState.selectedDate?calState.selectedDate.getFullYear():today.getFullYear();
   calState.month=calState.selectedDate?calState.selectedDate.getMonth():today.getMonth();
-  renderCalPopupWithWeather();
-  var popup=el('calPopup'); popup.style.display='block';
+  // Show popup and overlay FIRST so it always appears
+  var popup=el('calPopup');
+  if(!popup){ showToast('Calendar error','error'); return; }
+  popup.style.display='block';
   var isMob=window.innerWidth<=768;
   if(isMob || !anchorEl){
-    // Center on mobile for reliability
     popup.style.top='50%'; popup.style.left='50%';
     popup.style.right='auto';
     popup.style.transform='translate(-50%,-50%)';
@@ -1132,8 +1133,15 @@ function openCal(projId,actId,field,anchorEl) {
   var cols={call_date:'#f59e0b',for_date:'#3b82f6',actual_start:'#22c55e',complete_date:'#a855f7'};
   var col=cols[field]||'#fff';
   popup.style.borderColor=col+'66';
-  el('calMonthLabel').style.color=col;
-  el('calOverlay').classList.add('open');
+  var ml=el('calMonthLabel'); if(ml) ml.style.color=col;
+  var ov=el('calOverlay'); if(ov) ov.classList.add('open');
+  // Now render the days - wrapped so any error doesn't prevent the popup showing
+  try {
+    renderCalPopupWithWeather();
+  } catch(e) {
+    console.error('Calendar render error:', e);
+    renderCalPopupBasic();
+  }
 }
 function closeCal() {
   var p=el('calPopup'); if(p) p.style.display='none';
