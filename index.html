@@ -851,7 +851,7 @@ function renderDetail(projId,search,stageF,selIds) {
       rows+='<td><button class="send-btn"'+(canSend&&!isDone?'':' disabled')+' onclick="initSend(\''+projId+'\','+act.id+')">'+(act.status==='Pending'?'SEND':'RESEND')+'</button></td>';
       rows+='<td style="white-space:nowrap">';
       rows+='<button class="flag-btn" onclick="toggleFlag(\''+projId+'\','+act.id+')" style="'+(isFlagged?'color:var(--yellow)':'')+'">&#9873;</button>';
-      rows+='<button onclick="photoForActivity(\\\'\'+projId+\'\\\',\'+act.id+\')" style="background:var(--black3);border:1px solid var(--grey1);color:var(--grey5);width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:13px" title="Add photo">&#128247;</button>';
+      rows+='<button class="comment-btn" onclick="photoForActivity(\''+projId+'\','+act.id+')" title="Add photo">&#128247;</button>';
       rows+='<button class="comment-btn'+(comments.length>0?' has-comment':'')+'" onclick="openComments(\''+projId+'\','+act.id+')">&#128172;'+(comments.length>0?'<sup style="font-size:8px">'+comments.length+'</sup>':'')+'</button>';
       rows+='<button class="del-btn" onclick="deleteActivity(\''+projId+'\','+act.id+')">&#10005;</button></td>';
     }
@@ -1115,9 +1115,10 @@ function openCal(projId,actId,field,anchorEl) {
   renderCalPopupWithWeather();
   var popup=el('calPopup'); popup.style.display='block';
   var isMob=window.innerWidth<=768;
-  if(isMob){
+  if(isMob || !anchorEl){
     // Center on mobile for reliability
     popup.style.top='50%'; popup.style.left='50%';
+    popup.style.right='auto';
     popup.style.transform='translate(-50%,-50%)';
   } else {
     popup.style.transform='none';
@@ -1730,18 +1731,9 @@ function renderCalPopupWithWeather() {
   var cols = { call_date:'#f59e0b', for_date:'#3b82f6', actual_start:'#22c55e', complete_date:'#a855f7' };
   var col = cols[calState.field] || '#fff';
 
-  fetchWeather().then(function(weather) {
-    var weatherMap = {};
-    if (weather) {
-      weather.time.forEach(function(dateStr, i) {
-        weatherMap[dateStr] = {
-          emoji: weatherEmoji(weather.weathercode[i]),
-          max: Math.round(weather.temperature_2m_max[i]),
-          rain: weather.precipitation_sum[i]
-        };
-      });
-    }
-
+  // Build the calendar grid - takes optional weatherMap
+  function buildGrid(weatherMap) {
+    weatherMap = weatherMap || {};
     var html = '';
     for (var i = firstDay - 1; i >= 0; i--) {
       html += '<div class="cal-day other-month">' + (daysInPrev - i) + '</div>';
@@ -1754,7 +1746,6 @@ function renderCalPopupWithWeather() {
       var cls = 'cal-day' + (isWk ? ' weekend' : '') + (isToday ? ' today' : '') + (isSel ? ' selected' : '');
       var style = isSel ? 'background:' + col + ';color:#000;' : '';
 
-      // Disable non-today days for call_date
       if (calState.field === 'call_date' && !isToday) {
         style += 'opacity:.2;cursor:not-allowed;';
       }
@@ -1779,18 +1770,35 @@ function renderCalPopupWithWeather() {
     }
     var calDaysEl = document.getElementById('calDays');
     if (calDaysEl) calDaysEl.innerHTML = html;
+  }
 
-    var legendEl = document.getElementById('calWeatherLegend');
-    if (legendEl) {
-      var isCurrentMonth = calState.month === today.getMonth() && calState.year === today.getFullYear();
-      if (isCurrentMonth && Object.keys(weatherMap).length > 0) {
-        legendEl.style.display = 'block';
-        legendEl.innerHTML = '<span style="font-size:9px;color:var(--grey4)">Melbourne 7-day forecast</span>';
-      } else {
-        legendEl.style.display = 'none';
+  // Render days IMMEDIATELY so they're always tappable, even if weather fails
+  buildGrid({});
+
+  // Then enhance with weather when/if it loads (non-blocking)
+  fetchWeather().then(function(weather) {
+    var weatherMap = {};
+    if (weather && weather.time) {
+      weather.time.forEach(function(dateStr, i) {
+        weatherMap[dateStr] = {
+          emoji: weatherEmoji(weather.weathercode[i]),
+          max: Math.round(weather.temperature_2m_max[i]),
+          rain: weather.precipitation_sum[i]
+        };
+      });
+      buildGrid(weatherMap);
+      var legendEl = document.getElementById('calWeatherLegend');
+      if (legendEl) {
+        var isCurrentMonth = calState.month === today.getMonth() && calState.year === today.getFullYear();
+        if (isCurrentMonth && Object.keys(weatherMap).length > 0) {
+          legendEl.style.display = 'block';
+          legendEl.innerHTML = '<span style="font-size:9px;color:var(--grey4)">Melbourne 7-day forecast</span>';
+        } else {
+          legendEl.style.display = 'none';
+        }
       }
     }
-  });
+  }).catch(function(){ /* weather failed - days already rendered */ });
 }
 
 // Project Comments Tab
