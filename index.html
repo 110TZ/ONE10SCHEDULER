@@ -551,6 +551,7 @@ function refreshCurrentView() {
 
 // -- BOOT ---------------------------------------------------------------------
 function boot() {
+  console.log('ONE10 Scheduler — build 2026-05-28-cal-fix-v3');
   el('loadingText').textContent='Connecting...';
   dbSeedIfEmpty().then(function(){
     return dbFetch();
@@ -816,9 +817,9 @@ function renderDetail(projId,search,stageF,selIds) {
           :(isLocked?'showToast(\'Set previous date first.\',\'error\')':'openCal(\''+projId+'\','+act.id+',\''+field+'\',this)');
         var dispVal=val?fmtDate(val):(isLocked?'locked':'tap to set');
         var dispCol=val?col:'var(--grey3)';
-        rows+='<div role="button" tabindex="0" style="background:var(--black3);border:1px solid var(--grey1);border-radius:8px;padding:10px 12px;cursor:pointer;opacity:'+(isLocked?'.4':'1')+';-webkit-tap-highlight-color:rgba(255,255,255,.1);user-select:none" onclick="'+clickFn+'">';
-        rows+='<div style="font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:'+col+';margin-bottom:4px">'+label+'</div>';
-        rows+='<div style="font-size:12px;font-family:DM Mono,monospace;color:'+dispCol+'">'+dispVal+'</div></div>';
+        rows+='<div role="button" tabindex="0" style="background:var(--black3);border:1px solid var(--grey1);border-radius:8px;padding:10px 12px;cursor:pointer;opacity:'+(isLocked?'.4':'1')+';-webkit-tap-highlight-color:rgba(255,255,255,.2);user-select:none" onclick="'+clickFn+'">';
+        rows+='<div style="font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:'+col+';margin-bottom:4px;pointer-events:none">'+label+'</div>';
+        rows+='<div style="font-size:12px;font-family:DM Mono,monospace;color:'+dispCol+';pointer-events:none">'+dispVal+'</div></div>';
       });
       rows+='</div>';
       rows+='<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">';
