@@ -368,6 +368,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white)
 
 <div class="modal-overlay" id="dupProjModal"><div class="modal"><div class="modal-title">DUPLICATE PROJECT</div><div style="font-size:12px;color:var(--grey4);margin-bottom:14px">Copies all activities and vendors. No dates copied.</div><label class="modal-label">New Project Name *</label><input class="modal-input" id="dupProjName"><label class="modal-label">Address *</label><input class="modal-input" id="dupProjAddress"><label class="modal-label">Lot</label><input class="modal-input" id="dupProjLot"><div class="modal-actions"><button class="modal-cancel" onclick="closeModal('dupProjModal')">Cancel</button><button class="modal-save" onclick="confirmDuplicateProject()">Duplicate</button></div></div></div>
 
+<div class="modal-overlay" id="bulkClearDatesModal"><div class="modal" style="width:420px"><div class="modal-title">CLEAR DATES</div><div style="font-size:13px;color:var(--grey5);margin-bottom:16px" id="bulkClearDesc"></div><div style="background:var(--black3);border-radius:6px;padding:12px 14px;font-size:12px;color:var(--grey4);margin-bottom:12px">No emails will be sent. This only clears dates and resets status to Pending.</div><div class="modal-actions"><button class="modal-cancel" onclick="closeModal('bulkClearDatesModal')">Cancel</button><button class="modal-save" style="background:var(--red);color:var(--white)" onclick="confirmBulkClearDates()">Clear Dates</button></div></div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -605,7 +607,7 @@ function updateMobileNav(p) {
   var e=el('mbn-'+p); if(e) e.classList.add('active');
 }
 function switchProjTab(tabName, projId) {
-  ['schedule','comments','delays'].forEach(function(t){
+  ['schedule','comments','delays','budget'].forEach(function(t){
     var btn=el('tab-'+t), content=el('tabcontent-'+t);
     if(btn) btn.classList.remove('active');
     if(content) content.classList.remove('active');
@@ -615,6 +617,7 @@ function switchProjTab(tabName, projId) {
   if(content) content.classList.add('active');
   if(tabName==='comments') renderProjectComments(projId);
   if(tabName==='delays') renderDelaysTab(projId);
+  if(tabName==='budget') renderBudgetTab(projId);
 }
 
 // -- DASHBOARD ----------------------------------------------------------------
@@ -695,6 +698,7 @@ function openProject(id) {
 
 // -- RENDER DETAIL ------------------------------------------------------------
 function renderDetail(projId,search,stageF,selIds) {
+
   search=search||''; stageF=stageF||'all'; selIds=selIds||[];
   var proj=projects.find(function(p){return p.id===projId;});
   if (!proj) return;
@@ -864,13 +868,14 @@ function renderDetail(projId,search,stageF,selIds) {
   html+='<button class="bulk-btn" onclick="selectAllActivities(\''+projId+'\')">All</button>';
   html+='<button class="bulk-btn" onclick="clearSelection(\''+projId+'\')">Clear</button>';
   html+='<button class="bulk-btn primary" onclick="openBulkReschedule(\''+projId+'\')">Reschedule</button>';
-  html+='<button class="bulk-btn danger" onclick="openBulkCallOff(\''+projId+'\')">Call Off</button></div>';
+  html+='<button class="bulk-btn danger" onclick="openBulkCallOff(\''+projId+'\')">Call Off</button><button class="bulk-btn danger" onclick="openBulkClearDates(\\\'\'+projId+\'\\\')">Clear Dates</button></div>';
 
   // Tab bar
   html+='<div class="proj-tab-bar">';
   html+='<button class="proj-tab active" id="tab-schedule" onclick="switchProjTab(\'schedule\',\''+projId+'\')">Schedule</button>';
   html+='<button class="proj-tab" id="tab-comments" onclick="switchProjTab(\'comments\',\''+projId+'\')" style="'+cTabStyle+'">'+cTabLabel+'</button>';
   html+='<button class="proj-tab" id="tab-delays" onclick="switchProjTab(\'delays\',\''+projId+'\')">Delays'+(delayCount>0?' ('+delayDays+'d)':'')+'</button>';
+  html+='<button class="proj-tab" id="tab-budget" onclick="switchProjTab(\\\'budget\\\',\\\'\'+projId+\'\\\')">Budget</button>';
   html+='</div>';
 
   // Schedule tab
@@ -902,10 +907,12 @@ function renderDetail(projId,search,stageF,selIds) {
 
   html+='<div class="proj-tab-content" id="tabcontent-comments"><div id="projCommentsBody" style="padding:4px 0"></div></div>';
   html+='<div class="proj-tab-content" id="tabcontent-delays"><div id="projDelaysBody" style="padding:4px 0"></div></div>';
+  html+='<div class="proj-tab-content" id="tabcontent-budget"><div id="projBudgetBody" style="padding:4px 0"></div></div>';
 
   el('projectDetail').innerHTML=html;
   renderProjectComments(projId);
   renderDelaysTab(projId);
+  renderBudgetTab(projId);
 }
 
 function dateBtnCell(projId,act,field,colClass) {
@@ -1943,17 +1950,61 @@ function toggleDelayItem(id) {
   if (el2) el2.style.display = el2.style.display === 'none' ? 'block' : 'none';
 }
 
+function getWeekBounds() {
+  var today = new Date();
+  var dow = today.getDay();
+  var mon = new Date(today);
+  mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+  mon.setHours(0,0,0,0);
+  var fri = new Date(mon);
+  fri.setDate(mon.getDate() + 4);
+  fri.setHours(23,59,59,999);
+  return { mon: mon, fri: fri };
+}
+function countBusinessDays(from, to) {
+  var count = 0;
+  var cur = new Date(from);
+  cur.setHours(0,0,0,0);
+  var end = new Date(to);
+  end.setHours(0,0,0,0);
+  while (cur <= end) {
+    var dow = cur.getDay();
+    if (dow !== 0 && dow !== 6) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
 function calcDelayDays() {
   var fromEl = document.getElementById('delayDateFrom');
   var toEl = document.getElementById('delayDateTo');
   var calcEl = document.getElementById('delayDaysCalc');
   if (!fromEl || !toEl || !calcEl) return;
   var from = fromEl.value, to = toEl.value;
+  var bounds = getWeekBounds();
+  // Restrict to current week
+  if (from) {
+    var d = parseLocal(from);
+    if (d < bounds.mon || d > bounds.fri) {
+      fromEl.value = '';
+      calcEl.textContent = 'Delays can only be logged for the current week (Mon-Fri).';
+      calcEl.style.color = 'var(--red)';
+      return;
+    }
+  }
+  if (to) {
+    var d2 = parseLocal(to);
+    if (d2 < bounds.mon || d2 > bounds.fri) {
+      toEl.value = '';
+      calcEl.textContent = 'Delays can only be logged for the current week (Mon-Fri).';
+      calcEl.style.color = 'var(--red)';
+      return;
+    }
+  }
   if (from && to) {
     var d1 = parseLocal(from), d2 = parseLocal(to);
     if (d2 >= d1) {
-      var days = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-      calcEl.textContent = days + ' calendar day' + (days === 1 ? '' : 's') + ' affected';
+      var days = countBusinessDays(d1, d2);
+      calcEl.textContent = days + ' business day' + (days === 1 ? '' : 's') + ' affected (Mon-Fri only)';
       calcEl.style.color = 'var(--red)';
     } else {
       calcEl.textContent = 'End date must be after start date';
@@ -1973,8 +2024,13 @@ function saveDelay(projId) {
   var reason = reasonEl.value, notes = notesEl ? notesEl.value.trim() : '';
   if (!from) { showToast('Select a start date.', 'error'); return; }
   if (!reason) { showToast('Select a reason.', 'error'); return; }
+  var bounds = getWeekBounds();
+  var d1check = parseLocal(from);
+  if (d1check < bounds.mon || d1check > bounds.fri) {
+    showToast('Delays can only be logged for the current week.', 'error'); return;
+  }
   var d1 = parseLocal(from), d2 = to ? parseLocal(to) : parseLocal(from);
-  var days = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+  var days = countBusinessDays(d1, d2);
   var selActs = actsEl ? Array.from(actsEl.selectedOptions).map(function(o){ return parseInt(o.value); }) : [];
 
   var category = 'Other';
@@ -2026,6 +2082,188 @@ function renderOverdueBanner() {
     + '<div style="font-size:11px;color:var(--grey4)">' + top3 + (overdue.length > 3 ? ' + ' + (overdue.length - 3) + ' more' : '') + '</div></div></div>'
     + '<button onclick="showPage(\'projects\')" style="background:var(--red);color:var(--white);border:none;padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">View All</button>'
     + '</div>';
+}
+
+
+
+// === BULK CLEAR DATES ===========================================================
+function openBulkClearDates(projId) {
+  if (!currentSelection.length) { showToast('Select activities first.', 'error'); return; }
+  document.getElementById('bulkClearDesc').textContent = 'This will clear Call Date, For Date, Start Date and Complete Date on ' + currentSelection.length + ' activities. Status will reset to Pending.';
+  openModal('bulkClearDatesModal');
+}
+function confirmBulkClearDates() {
+  var selCopy = currentSelection.slice();
+  var chain = Promise.resolve();
+  selCopy.forEach(function(actId) {
+    chain = chain.then(function() {
+      var act = getAct(curProjId, actId);
+      if (!act) return;
+      act.call_date = '';
+      act.for_date = '';
+      act.actual_start = '';
+      act.complete_date = '';
+      act.status = 'Pending';
+      return dbUpdateActivity(act);
+    });
+  });
+  chain.then(function() {
+    closeModal('bulkClearDatesModal');
+    return dbFetch();
+  }).then(function() {
+    var count = selCopy.length;
+    currentSelection = [];
+    renderDetail(curProjId, '', 'all', []);
+    renderDashboard();
+    showToast('Cleared dates on ' + count + ' activities.', 'success');
+  });
+}
+
+// === BUDGET TAB =================================================================
+function renderBudgetTab(projId) {
+  var proj = projects.find(function(p) { return p.id === projId; });
+  if (!proj) return;
+  var budget = proj.budget || {};
+  if (!budget.rows) {
+    // Initialize with existing activities grouped by stage
+    var defaultStages = ['Preliminaries', 'BASE STAGE', 'FRAME', 'LOCK UP', 'FIX', 'FINAL / COMPLETION'];
+    var rows = [];
+    defaultStages.forEach(function(stage) {
+      if (stage === 'Preliminaries') {
+        // Empty preliminaries to start
+        return;
+      }
+      var sa = (proj.activities || []).filter(function(a) { return a.stage === stage; });
+      sa.forEach(function(a) {
+        rows.push({ stage: stage, name: a.name, quoted: 0, actual: 0, id: 'b_' + a.id });
+      });
+    });
+    budget.rows = rows;
+  }
+  
+  var stages = ['Preliminaries', 'BASE STAGE', 'FRAME', 'LOCK UP', 'FIX', 'FINAL / COMPLETION'];
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">';
+  html += '<div style="font-size:11px;color:var(--grey4);letter-spacing:1px;text-transform:uppercase">Budget tracking</div>';
+  html += '</div>';
+  
+  // Summary cards
+  var totalQuoted = 0, totalActual = 0;
+  budget.rows.forEach(function(r) { totalQuoted += parseFloat(r.quoted) || 0; totalActual += parseFloat(r.actual) || 0; });
+  var variance = totalQuoted - totalActual;
+  var varColor = variance >= 0 ? 'var(--green)' : 'var(--red)';
+  var varSign = variance >= 0 ? '+' : '-';
+  
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">';
+  html += '<div style="background:var(--black2);border:1px solid var(--grey1);border-radius:6px;padding:14px"><div style="font-size:10px;color:var(--grey4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Total Quoted</div><div style="font-family:Bebas Neue,sans-serif;font-size:24px">$' + totalQuoted.toLocaleString('en-AU', {minimumFractionDigits: 0}) + '</div></div>';
+  html += '<div style="background:var(--black2);border:1px solid var(--grey1);border-radius:6px;padding:14px"><div style="font-size:10px;color:var(--grey4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Total Actual</div><div style="font-family:Bebas Neue,sans-serif;font-size:24px">$' + totalActual.toLocaleString('en-AU', {minimumFractionDigits: 0}) + '</div></div>';
+  html += '<div style="background:var(--black2);border:1px solid var(--grey1);border-radius:6px;padding:14px"><div style="font-size:10px;color:var(--grey4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Variance</div><div style="font-family:Bebas Neue,sans-serif;font-size:24px;color:' + varColor + '">' + varSign + '$' + Math.abs(variance).toLocaleString('en-AU', {minimumFractionDigits: 0}) + '</div></div>';
+  html += '</div>';
+  
+  // Budget table grouped by stage
+  html += '<div style="background:var(--black2);border:1px solid var(--grey1);border-radius:6px;overflow:hidden">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  html += '<thead><tr style="background:var(--black3)">';
+  html += '<th style="text-align:left;padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--grey4);border-bottom:1px solid var(--grey1)">Activity</th>';
+  html += '<th style="text-align:right;padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--grey4);border-bottom:1px solid var(--grey1);width:130px">Quoted ($)</th>';
+  html += '<th style="text-align:right;padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--grey4);border-bottom:1px solid var(--grey1);width:130px">Actual ($)</th>';
+  html += '<th style="text-align:right;padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--grey4);border-bottom:1px solid var(--grey1);width:120px">Variance</th>';
+  html += '<th style="width:30px;border-bottom:1px solid var(--grey1)"></th>';
+  html += '</tr></thead><tbody>';
+  
+  stages.forEach(function(stage) {
+    var stageRows = budget.rows.filter(function(r) { return r.stage === stage; });
+    var stageQuoted = 0, stageActual = 0;
+    stageRows.forEach(function(r) { stageQuoted += parseFloat(r.quoted) || 0; stageActual += parseFloat(r.actual) || 0; });
+    var stageVar = stageQuoted - stageActual;
+    
+    // Stage header
+    html += '<tr style="background:rgba(255,255,255,.02)"><td colspan="5" style="padding:8px 12px;font-family:Bebas Neue,sans-serif;font-size:12px;letter-spacing:2px;color:var(--grey5);border-bottom:1px solid var(--grey1)">' + stage + '</td></tr>';
+    
+    // Stage rows
+    stageRows.forEach(function(r, ri) {
+      var rVar = (parseFloat(r.quoted) || 0) - (parseFloat(r.actual) || 0);
+      var rVarColor = rVar > 0 ? 'var(--green)' : (rVar < 0 ? 'var(--red)' : 'var(--grey4)');
+      var rVarSign = rVar > 0 ? '+' : (rVar < 0 ? '-' : '');
+      html += '<tr style="border-bottom:1px solid rgba(255,255,255,.03)">';
+      html += '<td style="padding:8px 12px"><input type="text" value="' + (r.name || '') + '" onchange="updateBudgetRow(\'' + projId + '\',\'' + r.id + '\',\'name\',this.value)" style="background:transparent;border:none;color:var(--white);font-size:13px;width:100%;outline:none;font-family:DM Sans,sans-serif"></td>';
+      html += '<td style="padding:8px 12px;text-align:right"><input type="number" value="' + (r.quoted || '') + '" placeholder="0" onchange="updateBudgetRow(\'' + projId + '\',\'' + r.id + '\',\'quoted\',this.value)" style="background:var(--black3);border:1px solid var(--grey1);color:var(--white);padding:5px 8px;border-radius:4px;font-size:12px;font-family:DM Mono,monospace;width:100px;text-align:right;outline:none"></td>';
+      html += '<td style="padding:8px 12px;text-align:right"><input type="number" value="' + (r.actual || '') + '" placeholder="0" onchange="updateBudgetRow(\'' + projId + '\',\'' + r.id + '\',\'actual\',this.value)" style="background:var(--black3);border:1px solid var(--grey1);color:var(--white);padding:5px 8px;border-radius:4px;font-size:12px;font-family:DM Mono,monospace;width:100px;text-align:right;outline:none"></td>';
+      html += '<td style="padding:8px 12px;text-align:right;font-family:DM Mono,monospace;font-size:12px;color:' + rVarColor + '">' + rVarSign + '$' + Math.abs(rVar).toLocaleString('en-AU', {minimumFractionDigits: 0}) + '</td>';
+      html += '<td style="padding:8px 6px;text-align:center"><button onclick="deleteBudgetRow(\'' + projId + '\',\'' + r.id + '\')" style="background:transparent;border:none;color:var(--grey3);cursor:pointer;padding:3px 6px;font-size:14px">&#10005;</button></td>';
+      html += '</tr>';
+    });
+    
+    // Add row button
+    html += '<tr><td colspan="5" style="padding:6px 12px;border-bottom:1px solid rgba(255,255,255,.03)"><button onclick="addBudgetRow(\'' + projId + '\',\'' + stage + '\')" style="background:transparent;border:1px dashed var(--grey2);color:var(--grey4);padding:5px 12px;border-radius:4px;font-size:11px;cursor:pointer;font-family:DM Sans,sans-serif">+ Add Activity to ' + stage + '</button></td></tr>';
+    
+    // Stage subtotal
+    if (stageRows.length > 0) {
+      var stVarColor = stageVar > 0 ? 'var(--green)' : (stageVar < 0 ? 'var(--red)' : 'var(--grey4)');
+      var stVarSign = stageVar > 0 ? '+' : (stageVar < 0 ? '-' : '');
+      html += '<tr style="background:rgba(255,255,255,.03);border-bottom:1px solid var(--grey1)">';
+      html += '<td style="padding:6px 12px;font-size:11px;color:var(--grey4);font-weight:700;text-transform:uppercase;letter-spacing:1px">' + stage + ' Subtotal</td>';
+      html += '<td style="padding:6px 12px;text-align:right;font-family:DM Mono,monospace;font-size:12px;color:var(--grey5)">$' + stageQuoted.toLocaleString('en-AU') + '</td>';
+      html += '<td style="padding:6px 12px;text-align:right;font-family:DM Mono,monospace;font-size:12px;color:var(--grey5)">$' + stageActual.toLocaleString('en-AU') + '</td>';
+      html += '<td style="padding:6px 12px;text-align:right;font-family:DM Mono,monospace;font-size:12px;color:' + stVarColor + ';font-weight:700">' + stVarSign + '$' + Math.abs(stageVar).toLocaleString('en-AU') + '</td>';
+      html += '<td></td></tr>';
+    }
+  });
+  
+  // Grand total
+  html += '<tr style="background:var(--black3);border-top:2px solid var(--grey2)">';
+  html += '<td style="padding:12px;font-family:Bebas Neue,sans-serif;font-size:14px;letter-spacing:2px;color:var(--white)">GRAND TOTAL</td>';
+  html += '<td style="padding:12px;text-align:right;font-family:DM Mono,monospace;font-size:14px;color:var(--white);font-weight:700">$' + totalQuoted.toLocaleString('en-AU') + '</td>';
+  html += '<td style="padding:12px;text-align:right;font-family:DM Mono,monospace;font-size:14px;color:var(--white);font-weight:700">$' + totalActual.toLocaleString('en-AU') + '</td>';
+  html += '<td style="padding:12px;text-align:right;font-family:DM Mono,monospace;font-size:14px;color:' + varColor + ';font-weight:700">' + varSign + '$' + Math.abs(variance).toLocaleString('en-AU') + '</td>';
+  html += '<td></td></tr>';
+  
+  html += '</tbody></table></div>';
+  
+  el('projBudgetBody').innerHTML = html;
+}
+
+function updateBudgetRow(projId, rowId, field, value) {
+  var proj = projects.find(function(p) { return p.id === projId; });
+  if (!proj) return;
+  if (!proj.budget) proj.budget = { rows: [] };
+  if (!proj.budget.rows) proj.budget.rows = [];
+  var row = proj.budget.rows.find(function(r) { return r.id === rowId; });
+  if (!row) return;
+  if (field === 'quoted' || field === 'actual') {
+    row[field] = parseFloat(value) || 0;
+  } else {
+    row[field] = value;
+  }
+  sb.from('projects').update({ budget: proj.budget }).eq('id', projId).then(function() {
+    renderBudgetTab(projId);
+  });
+}
+
+function addBudgetRow(projId, stage) {
+  var proj = projects.find(function(p) { return p.id === projId; });
+  if (!proj) return;
+  if (!proj.budget) proj.budget = { rows: [] };
+  if (!proj.budget.rows) proj.budget.rows = [];
+  proj.budget.rows.push({
+    id: 'b_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+    stage: stage,
+    name: 'New activity',
+    quoted: 0,
+    actual: 0
+  });
+  sb.from('projects').update({ budget: proj.budget }).eq('id', projId).then(function() {
+    renderBudgetTab(projId);
+  });
+}
+
+function deleteBudgetRow(projId, rowId) {
+  if (!confirm('Remove this budget item?')) return;
+  var proj = projects.find(function(p) { return p.id === projId; });
+  if (!proj || !proj.budget || !proj.budget.rows) return;
+  proj.budget.rows = proj.budget.rows.filter(function(r) { return r.id !== rowId; });
+  sb.from('projects').update({ budget: proj.budget }).eq('id', projId).then(function() {
+    renderBudgetTab(projId);
+  });
 }
 
 boot();
