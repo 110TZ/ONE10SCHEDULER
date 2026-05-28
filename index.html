@@ -135,7 +135,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white)
 .del-btn:hover{color:var(--red);background:rgba(239,68,68,.1)}
 .comment-preview{font-size:10px;color:var(--grey4);font-style:italic;padding:3px 10px 5px;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid var(--grey1);margin-left:10px}
 .hide-link{color:var(--grey3);cursor:pointer;margin-left:6px;font-style:normal;text-decoration:underline;font-size:9px}
-.cal-overlay{position:fixed;inset:0;z-index:9000;display:none}
+.cal-overlay{position:fixed;inset:0;z-index:9998;display:none}
 .cal-overlay.open{display:block;background:rgba(0,0,0,.5)}
 .cal-popup{position:fixed;z-index:9001;background:var(--black2);border:1px solid var(--grey2);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.8);padding:16px;width:270px;display:none}
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -1102,15 +1102,12 @@ function hideComment(projId,actId) {
 
 // -- CALENDAR -----------------------------------------------------------------
 function openCal(projId,actId,field,anchorEl) {
-  try {
-  showToast('step1: entered', 'info');
   var act=getAct(projId,actId);
-  if(!act){ showToast('step1b: NO ACT FOUND for '+actId, 'error'); return; }
+  if(!act) return;
   var deps={for_date:'call_date',actual_start:'for_date',complete_date:'actual_start'};
   var labels={call_date:'Call Date',for_date:'For Date',actual_start:'Start Date',complete_date:'Complete Date'};
   var reqField=deps[field];
   if(reqField&&act&&!act[reqField]){showToast('Set '+labels[reqField]+' first.','error');return;}
-  showToast('step2: passed dep check', 'info');
   var existing=act?act[field]:null;
   var today=new Date();
   calState.projId=projId; calState.actId=actId; calState.field=field;
@@ -1120,12 +1117,17 @@ function openCal(projId,actId,field,anchorEl) {
   // Show popup and overlay FIRST so it always appears
   var popup=el('calPopup');
   if(!popup){ showToast('Calendar error','error'); return; }
-  popup.style.display='block';
   var isMob=window.innerWidth<=768;
+  popup.style.setProperty('display','block','important');
+  popup.style.setProperty('position','fixed','important');
+  popup.style.setProperty('z-index','99999','important');
   if(isMob || !anchorEl){
-    popup.style.top='50%'; popup.style.left='50%';
-    popup.style.right='auto';
-    popup.style.transform='translate(-50%,-50%)';
+    popup.style.setProperty('top','50%','important');
+    popup.style.setProperty('left','50%','important');
+    popup.style.setProperty('right','auto','important');
+    popup.style.setProperty('transform','translate(-50%,-50%)','important');
+    popup.style.setProperty('max-height','80vh','important');
+    popup.style.setProperty('overflow-y','auto','important');
   } else {
     popup.style.transform='none';
     var rect=anchorEl.getBoundingClientRect();
@@ -1139,17 +1141,10 @@ function openCal(projId,actId,field,anchorEl) {
   popup.style.borderColor=col+'66';
   var ml=el('calMonthLabel'); if(ml) ml.style.color=col;
   var ov=el('calOverlay'); if(ov) ov.classList.add('open');
-  showToast('step3: popup shown', 'info');
-  // Now render the days - wrapped so any error doesn't prevent the popup showing
   try {
     renderCalPopupWithWeather();
-    showToast('step4: rendered OK', 'info');
   } catch(e) {
-    showToast('RENDER ERROR: '+e.message, 'error');
     renderCalPopupBasic();
-  }
-  } catch(outerE) {
-    showToast('OUTER ERROR: '+outerE.message, 'error');
   }
 }
 function closeCal() {
