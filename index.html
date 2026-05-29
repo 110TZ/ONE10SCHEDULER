@@ -815,11 +815,11 @@ function renderDetail(projId,search,stageF,selIds) {
         var reqField=deps[field];
         var isCallDate=field==='call_date';
         var isLocked=!isCallDate&&reqField&&!act[reqField];
-        var clickFn=isCallDate?'openCalSimple(\''+projId+'\','+act.id+',\'call_date\')'
-          :(isLocked?'showToast(\'Set previous date first.\',\'error\')':'openCalSimple(\''+projId+'\','+act.id+',\''+field+'\')');
+        var clickFn=isCallDate?'openCal(\''+projId+'\','+act.id+',\'call_date\',this)'
+          :(isLocked?'showToast(\'Set previous date first.\',\'error\')':'openCal(\''+projId+'\','+act.id+',\''+field+'\',this)');
         var dispVal=val?fmtDate(val):(isLocked?'locked':'tap to set');
         var dispCol=val?col:'var(--grey3)';
-        rows+='<button type="button" style="display:block;width:100%;text-align:left;background:var(--black3);border:1px solid var(--grey1);border-radius:8px;padding:10px 12px;cursor:pointer;opacity:'+(isLocked?'.4':'1')+';-webkit-tap-highlight-color:rgba(255,255,255,.2);font-family:inherit" onclick="'+clickFn+'">';
+        rows+='<button type="button" class="date-btn mc-date-box" style="display:block;width:100%;text-align:left;background:var(--black3);border:1px solid var(--grey1);border-radius:8px;padding:10px 12px;cursor:pointer;opacity:'+(isLocked?'.4':'1')+';-webkit-tap-highlight-color:rgba(255,255,255,.2);font-family:inherit" onclick="'+clickFn+'">';
         rows+='<div style="font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:'+col+';margin-bottom:4px;pointer-events:none">'+label+'</div>';
         rows+='<div style="font-size:12px;font-family:DM Mono,monospace;color:'+dispCol+';pointer-events:none">'+dispVal+'</div></button>';
       });
