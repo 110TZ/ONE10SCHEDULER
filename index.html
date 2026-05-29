@@ -815,8 +815,8 @@ function renderDetail(projId,search,stageF,selIds) {
         var reqField=deps[field];
         var isCallDate=field==='call_date';
         var isLocked=!isCallDate&&reqField&&!act[reqField];
-        var clickFn=isCallDate?'openCal(\''+projId+'\','+act.id+',\'call_date\',this)'
-          :(isLocked?'showToast(\'Set previous date first.\',\'error\')':'openCal(\''+projId+'\','+act.id+',\''+field+'\',this)');
+        var clickFn=isCallDate?'openCalSimple(\''+projId+'\','+act.id+',\'call_date\')'
+          :(isLocked?'showToast(\'Set previous date first.\',\'error\')':'openCalSimple(\''+projId+'\','+act.id+',\''+field+'\')');
         var dispVal=val?fmtDate(val):(isLocked?'locked':'tap to set');
         var dispCol=val?col:'var(--grey3)';
         rows+='<button type="button" style="display:block;width:100%;text-align:left;background:var(--black3);border:1px solid var(--grey1);border-radius:8px;padding:10px 12px;cursor:pointer;opacity:'+(isLocked?'.4':'1')+';-webkit-tap-highlight-color:rgba(255,255,255,.2);font-family:inherit" onclick="'+clickFn+'">';
@@ -1103,6 +1103,77 @@ function hideComment(projId,actId) {
 }
 
 // -- CALENDAR -----------------------------------------------------------------
+
+// === SIMPLE NATIVE DATE PICKER (mobile-friendly fallback) ===
+function openCalSimple(projId, actId, field) {
+  var act = getAct(projId, actId);
+  if (!act) return;
+  var deps = {for_date:'call_date', actual_start:'for_date', complete_date:'actual_start'};
+  var labels = {call_date:'Call Date', for_date:'For Date', actual_start:'Start Date', complete_date:'Complete Date'};
+  var reqField = deps[field];
+  if (reqField && !act[reqField]) {
+    showToast('Set ' + labels[reqField] + ' first.', 'error');
+    return;
+  }
+  
+  // Build a modal with a native date input
+  var existing = act[field] || '';
+  var todayIso = isoDate(new Date());
+  var minDate = '';
+  var maxDate = '';
+  if (field === 'call_date') {
+    minDate = todayIso;
+    maxDate = todayIso;
+  }
+  
+  var modal = document.getElementById('simpleCalModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'simpleCalModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal" style="width:340px;max-width:90vw"><div class="modal-title" id="simpleCalTitle">SELECT DATE</div><input type="date" id="simpleCalInput" style="width:100%;padding:14px;font-size:16px;background:var(--black3);border:1px solid var(--grey1);color:var(--white);border-radius:8px;margin-bottom:14px;font-family:DM Mono,monospace"><div class="modal-actions"><button class="modal-cancel" onclick="closeModal(\'simpleCalModal\')">Cancel</button><button class="modal-save" id="simpleCalSave">Save</button><button class="modal-cancel" id="simpleCalClear" style="background:var(--red);color:var(--white);border:none;margin-right:auto">Clear</button></div></div>';
+    document.body.appendChild(modal);
+  }
+  
+  document.getElementById('simpleCalTitle').textContent = labels[field].toUpperCase();
+  var input = document.getElementById('simpleCalInput');
+  input.value = existing;
+  if (minDate) input.min = minDate; else input.removeAttribute('min');
+  if (maxDate) input.max = maxDate; else input.removeAttribute('max');
+  
+  // Color the input border by field type
+  var cols = {call_date:'#f59e0b', for_date:'#3b82f6', actual_start:'#22c55e', complete_date:'#a855f7'};
+  input.style.borderColor = cols[field] || 'var(--grey1)';
+  
+  document.getElementById('simpleCalSave').onclick = function() {
+    var val = input.value;
+    if (!val) { showToast('Pick a date', 'error'); return; }
+    if (field === 'call_date' && val !== todayIso) {
+      showToast('Call Date must be today.', 'error');
+      return;
+    }
+    act[field] = val;
+    if (field === 'complete_date') act.status = 'Completed';
+    dbUpdateActivity(act).then(function() {
+      closeModal('simpleCalModal');
+      renderDetail(projId, '', 'all', currentSelection);
+      renderDashboard();
+    });
+  };
+  
+  document.getElementById('simpleCalClear').onclick = function() {
+    act[field] = '';
+    dbUpdateActivity(act).then(function() {
+      closeModal('simpleCalModal');
+      renderDetail(projId, '', 'all', currentSelection);
+      renderDashboard();
+    });
+  };
+  
+  openModal('simpleCalModal');
+}
+
+
 function openCal(projId,actId,field,anchorEl) {
   var act=getAct(projId,actId);
   if(!act) return;
