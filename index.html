@@ -782,7 +782,7 @@ function renderDetail(projId,search,stageF,selIds) {
       rows+='<td style="padding:0 0 6px 0;display:table-cell" colspan="13">';
       rows+='<div style="background:var(--black2);border:1px solid var(--grey1);border-left:3px solid '+borderCol+';border-radius:10px;padding:14px;">';
       rows+='<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">';
-      rows+='<input type="checkbox" '+(isSelected?'checked':'')+' style="margin-top:3px;width:16px;height:16px;accent-color:#fff;flex-shrink:0" onchange="toggleSelect(\''+projId+'\','+act.id+',this.checked)">';
+      rows+='<input type="checkbox" '+(isSelected?'checked':'')+' style="margin-top:3px;width:22px;height:22px;accent-color:#3b82f6;flex-shrink:0;cursor:pointer" onchange="toggleSelect(\''+projId+'\','+act.id+',this.checked)" onclick="event.stopPropagation()">';
       rows+='<div style="flex:1;min-width:0">';
       rows+='<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:4px">';
       rows+='<span style="font-size:10px;color:var(--grey3);font-family:monospace">'+act.num+'</span>';
