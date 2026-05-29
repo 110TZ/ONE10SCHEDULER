@@ -137,7 +137,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white)
 .hide-link{color:var(--grey3);cursor:pointer;margin-left:6px;font-style:normal;text-decoration:underline;font-size:9px}
 .cal-overlay{position:fixed;inset:0;z-index:9998;display:none}
 .cal-overlay.open{display:block;background:rgba(0,0,0,.5)}
-.cal-popup{position:fixed;z-index:9001;background:var(--black2);border:1px solid var(--grey2);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.8);padding:16px;width:270px;display:none}
+.cal-popup{position:relative;z-index:9001;background:var(--black2);border:1px solid var(--grey2);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.8);padding:16px;width:270px;max-width:calc(100vw - 32px)}
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-month-label{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px}
 .cal-nav{background:none;border:1px solid var(--grey2);color:var(--grey5);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif}
@@ -347,14 +347,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white)
   <button class="mob-nav-item" id="mbn-settings" onclick="showPage('settings');updateMobileNav('settings')"><span class="mob-nav-icon">&#9881;</span><span class="mob-nav-label">More</span></button>
 </nav>
 
-<div class="cal-overlay" id="calOverlay"></div>
-<div class="cal-popup" id="calPopup">
-  <div class="cal-header"><button class="cal-nav" onclick="calNav(-1)">&#8249;</button><div class="cal-month-label" id="calMonthLabel"></div><button class="cal-nav" onclick="calNav(1)">&#8250;</button></div>
-  <div class="cal-dow"><span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span></div>
-  <div class="cal-days" id="calDays"></div>
-  <div id="calWeatherLegend"></div>
-  <div class="cal-footer"><button class="cal-clear" onclick="calClear()">Clear</button><button class="cal-today-btn" onclick="calSelectToday()">Today</button></div>
+<div class="modal-overlay" id="calModalOverlay" onclick="if(event.target===this)closeCal()">
+  <div class="cal-popup" id="calPopup">
+    <div class="cal-header"><button class="cal-nav" onclick="calNav(-1)">&#8249;</button><div class="cal-month-label" id="calMonthLabel"></div><button class="cal-nav" onclick="calNav(1)">&#8250;</button></div>
+    <div class="cal-dow"><span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span></div>
+    <div class="cal-days" id="calDays"></div>
+    <div id="calWeatherLegend"></div>
+    <div class="cal-footer"><button class="cal-clear" onclick="calClear()">Clear</button><button class="cal-today-btn" onclick="calSelectToday()">Today</button></div>
+  </div>
 </div>
+<div class="cal-overlay" id="calOverlay" style="display:none"></div>
 
 <div class="modal-overlay" id="vendorModal"><div class="modal"><div class="modal-title" id="vModalTitle">ADD VENDOR</div><label class="modal-label">Company / Trade Name *</label><input class="modal-input" id="vName" placeholder="e.g. Arrow Fencing"><label class="modal-label">Trade Category</label><input class="modal-input" id="vTrade" placeholder="e.g. Fencing"><label class="modal-label">Contact Name</label><input class="modal-input" id="vContact" placeholder="e.g. John Smith"><label class="modal-label">Email Address</label><input class="modal-input" id="vEmail" type="email" placeholder="e.g. info@example.com.au"><label class="modal-label">Phone</label><input class="modal-input" id="vPhone" placeholder="e.g. 0400 000 000"><label class="modal-label">Notes</label><input class="modal-input" id="vNotes" placeholder="Any notes..."><div class="modal-actions"><button class="modal-cancel" onclick="closeModal('vendorModal')">Cancel</button><button class="modal-save" onclick="saveVendor()">Save Vendor</button></div></div></div>
 
@@ -1117,30 +1119,13 @@ function openCal(projId,actId,field,anchorEl) {
   // Show popup and overlay FIRST so it always appears
   var popup=el('calPopup');
   if(!popup){ showToast('Calendar error','error'); return; }
-  var isMob=window.innerWidth<=768;
-  popup.style.setProperty('display','block','important');
-  popup.style.setProperty('position','fixed','important');
-  popup.style.setProperty('z-index','99999','important');
-  if(isMob || !anchorEl){
-    popup.style.setProperty('top','50%','important');
-    popup.style.setProperty('left','50%','important');
-    popup.style.setProperty('right','auto','important');
-    popup.style.setProperty('transform','translate(-50%,-50%)','important');
-    popup.style.setProperty('max-height','80vh','important');
-    popup.style.setProperty('overflow-y','auto','important');
-  } else {
-    popup.style.transform='none';
-    var rect=anchorEl.getBoundingClientRect();
-    var top=rect.bottom+8, left=rect.left;
-    if(top+310>window.innerHeight) top=rect.top-310;
-    if(left+275>window.innerWidth) left=window.innerWidth-285;
-    popup.style.top=Math.max(8,top)+'px'; popup.style.left=Math.max(8,left)+'px';
-  }
   var cols={call_date:'#f59e0b',for_date:'#3b82f6',actual_start:'#22c55e',complete_date:'#a855f7'};
   var col=cols[field]||'#fff';
   popup.style.borderColor=col+'66';
   var ml=el('calMonthLabel'); if(ml) ml.style.color=col;
-  var ov=el('calOverlay'); if(ov) ov.classList.add('open');
+  // Show as a centered modal - same system as other working modals
+  var modalOv=el('calModalOverlay');
+  if(modalOv) modalOv.classList.add('open');
   try {
     renderCalPopupWithWeather();
   } catch(e) {
@@ -1148,7 +1133,7 @@ function openCal(projId,actId,field,anchorEl) {
   }
 }
 function closeCal() {
-  var p=el('calPopup'); if(p) p.style.display='none';
+  var modalOv=el('calModalOverlay'); if(modalOv) modalOv.classList.remove('open');
   var o=el('calOverlay'); if(o) o.classList.remove('open');
 }
 function calNav(dir) {
